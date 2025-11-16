@@ -7,7 +7,7 @@ import pandas as pd
 import sqlite3
 
 
-BACKEND = os.getenv("BACKEND", "sqlite");
+BACKEND = os.getenv("BACKEND", "sqlite")
 SQLITE_PATH = os.getenv("SQLITE_PATH", "source.db")
 
 
