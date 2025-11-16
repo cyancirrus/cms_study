@@ -9,14 +9,12 @@ from typing import (
 )
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
 
 DATABASE = "source.db"
 
 
 # TODO: Split into train/test/validation
-
-# from sklearn.model_selection import train_test_split
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 
 class Model(Protocol):
@@ -77,13 +75,16 @@ def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     cols_to_check = target + [c + "_prev" for c in dimensions]
     df_clean = df_merged.dropna(subset=cols_to_check)
 
-    # Prepare X (previous year features) and y (current year targets)
     x = df_clean[[c + "_prev" for c in dimensions]].values
     y = df_clean[target].values
+    target_prev_cols = [c + "_prev" for c in target]
+    delta_y = y - df_clean[target_prev_cols].values
 
     assert isinstance(x, np.ndarray)
     assert isinstance(y, np.ndarray)
-    return x, y
+    assert isinstance(delta_y, np.ndarray)
+
+    return x, delta_y
 
 
 def structure_data_ar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
@@ -134,7 +135,13 @@ def metrics(model, x: np.ndarray, y: np.ndarray):
 
 if __name__ == "__main__":
     data = load_data()
-    # x, y = structure_data_ar(data)
     x, y = structure_data_multivar(data)
-    model = fit_linear_regression(x, y)
-    metrics(model, x, y)
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=42
+    )
+    model = fit_linear_regression(x_train, y_train)
+    print("Metrics on training set:")
+    metrics(model, x_train, y_train)
+
+    print("\nMetrics on test set:")
+    metrics(model, x_test, y_test)
