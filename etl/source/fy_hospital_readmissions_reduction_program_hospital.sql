@@ -10,9 +10,10 @@ CREATE TABLE fy_hospital_readmissions_reduction_program_hospital (
     footnote TEXT,
 
     excess_readmission_ratio REAL,
+    
     predicted_readmission_rate REAL,
-
     expected_readmission_rate REAL,
+
     number_of_readmissions INT,
 
     start_date DATE,

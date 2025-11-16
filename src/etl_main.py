@@ -32,6 +32,32 @@ def load_and_clean_csv(path: str) -> pd.DataFrame:
     assert isinstance(df, pd.DataFrame)
     return df
 
+def load_and_enrich_region_csv(path: str) -> pd.DataFrame:
+    df = pd.read_csv(
+        path,
+        na_values=[
+            "Not Available",
+            "Not Applicable",
+            "Too Few to Report",
+            "N/A",
+            "NA",
+            "",
+        ],
+    )
+    df.columns = [clean_column_name(c) for c in df.columns]
+    df["fips_state_code"] = pd.to_numeric(df["fips_state_code"], errors="coerce")
+    # try:
+    #     result = df.apply(pd.to_numeric)
+    #     df = result
+    # except Exception:
+    #     pass
+    # assert isinstance(df, pd.DataFrame)
+    # region_id: integers 0..n_regions-1 in order of first appearance
+    df["region_id"], _ = pd.factorize(df["region"])
+
+    # division_id: integers 0..n_divisions-1 in order of first appearance
+    df["division_id"], _ = pd.factorize(df["division"])
+    return df
 
 def load_and_clean_and_append_year_csv(path: str, year: int) -> pd.DataFrame:
     # Set low_memory = false in pd.read_csv if error in a heterogeneous column but no current errors
@@ -65,6 +91,12 @@ def insert_into_existing_table(df: pd.DataFrame, db_path: str, table_name: str):
         ].tolist()
         available_cols = [c for c in df.columns if c in existing_cols]
         df[available_cols].to_sql(table_name, conn, if_exists="append", index=False)
+
+
+def process_table_region(data_path:str, table_name:str):
+    print(f"loading table: {table_name}")
+    df = load_and_enrich_region_csv(data_path)
+    insert_into_existing_table(df, DATABASE, table_name)
 
 
 def process_table(data_path: str, table_name: str):
@@ -150,11 +182,12 @@ def process_cms_data(directory: str, year: int):
 
 def process_augmented_tables():
     # TODO: Set up definitions for msa want to check if like we can get historical data in
-    process_table("./data/augmented/zip_lat_long.csv", "zip_lat_long")
-    process_table("./data/augmented/msa_centers.csv", "msa_centers")
-    process_table("./data/augmented/msa_id.csv", "msa_id")
-    process_table("./data/augmented/msa_statistics.csv", "msa_statistics")
-    process_table("./data/augmented/zip_lat_long.csv", "zip_lat_long")
+    process_table_region("./data/augmented/region/state_region.csv", "state_region")
+    process_table("./data/augmented/msa/zip_lat_long.csv", "zip_lat_long")
+    # process_table("./data/augmented/msa_centers.csv", "msa_centers")
+    # process_table("./data/augmented/msa_id.csv", "msa_id")
+    # process_table("./data/augmented/msa_statistics.csv", "msa_statistics")
+    # process_table("./data/augmented/zip_lat_long.csv", "zip_lat_long")
 
 
 def process_all_years_cms():
@@ -167,4 +200,5 @@ def process_all_years_cms():
 
 
 if __name__ == "__main__":
+    process_augmented_tables()
     process_all_years_cms()

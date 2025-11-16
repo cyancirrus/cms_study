@@ -1,26 +1,16 @@
 from __future__ import annotations
+import sqlite3
+from typing import List, Protocol, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
-import sqlite3
-import numpy as np
 import pandas as pd
-from typing import (
-    List,
-    Protocol,
-    Tuple,
-)
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, MultiTaskLasso
 from sklearn.tree import DecisionTreeRegressor
-
-# from sklearn.ensemble import RandomForestRegressor
-# from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
 DATABASE = "source.db"
-
-
-# TODO: Split into train/test/validation
 
 
 class Model(Protocol):
@@ -30,19 +20,47 @@ class Model(Protocol):
 
 
 def load_data() -> pd.DataFrame:
+    """Load all hospital clinical outcomes."""
     with sqlite3.connect(DATABASE) as conn:
-        return pd.read_sql_query("SELECT * FROM hvbp_clinical_outcomes;", conn)
+        return pd.read_sql_query(
+            """
+            SELECT *
+            FROM hvbp_clinical_outcomes
+            WHERE state = "IL";
+        """,
+            conn,
+        )
 
 
-def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-    # Input measures
-    granularity: List[str] = [
-        "fiscal_year",
-        "facility_id",
-    ]
+def load_readmissions_scaled() -> pd.DataFrame:
+    """Load hospital readmissions data and scale rates."""
+    query = """
+        SELECT
+            facility_id,
+            submission_year, 
+            predicted_readmission_rate,
+            expected_readmission_rate
+        FROM fy_hospital_readmissions_reduction_program_hospital
+        WHERE state = "IL";
+    """
+    with sqlite3.connect(DATABASE) as conn:
+        df = pd.read_sql_query(query, conn)
 
-    dimensions: List[str] = [
-        # New
+    df = df.rename(columns={"submission_year": "fiscal_year"})
+    df["predicted_readmission_rate"] /= 1_000
+    df["expected_readmission_rate"] /= 1_000
+    return df
+
+
+def structure_data_multivar_with_readmissions(
+    df: pd.DataFrame, df_read: pd.DataFrame
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Prepare feature matrix X and target delta_y without leakage."""
+    granularity = ["fiscal_year", "facility_id"]
+
+    # All columns to consider as features
+    dimensions = [
+        # New metrics
         "mort_30_ami_achievement_threshold",
         "mort_30_ami_benchmark",
         "mort_30_hf_achievement_threshold",
@@ -55,7 +73,7 @@ def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         "mort_30_cabg_benchmark",
         "comp_hip_knee_achievement_threshold",
         "comp_hip_knee_benchmark",
-        # Prior
+        # Prior metrics
         "mort_30_ami_baseline_rate",
         "mort_30_ami_performance_rate",
         "mort_30_hf_baseline_rate",
@@ -69,7 +87,8 @@ def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         "comp_hip_knee_baseline_rate",
         "comp_hip_knee_performance_rate",
     ]
-    target: List[str] = [
+
+    target = [
         "mort_30_ami_performance_rate",
         "mort_30_hf_performance_rate",
         "mort_30_pn_performance_rate",
@@ -78,91 +97,181 @@ def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
         "comp_hip_knee_performance_rate",
     ]
 
-    # --- Step 3: Focus on relevant columns ---
+     # Merge with readmissions data
+    df_merged = pd.merge(df, df_read, on=["facility_id", "fiscal_year"], how="left")
+
+    # Shift FORWARD to get previous year's data
+    df_prev = df_merged.copy()
+    df_prev["fiscal_year"] += 1  # ← CHANGE THIS (was -= 1)
+    
+    prev_cols = dimensions + list(df_read.columns.difference(["facility_id", "fiscal_year"]))
+    df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in prev_cols})
+
+    # Now current year row gets actual previous year's features
+    df_final = pd.merge(
+        df_merged,
+        df_prev,
+        on=["facility_id", "fiscal_year"],
+        how="inner"
+    )
+
+    # Drop rows with NaNs in any required columns
+    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
+    df_final = df_final.dropna(subset=cols_to_check)
+
+    # Features: exclude previous-year target columns to prevent leakage
+    # prev_feature_cols = [c for c in prev_cols if c not in target]
+    prev_feature_cols = prev_cols
+    feature_cols = [f"{c}_prev" for c in prev_feature_cols]
+    print("Number of features:", len(feature_cols))
+    print("Feature columns:", feature_cols)
+    print("\nTarget columns we're predicting:", target)
+    print("--------------------------------------------------");
+    print("\nChecking for leakage:")
+    print("Columns in df_final:", df_final.columns.tolist())
+    print("\nAny non-_prev target columns in features?", [c for c in feature_cols if any(t in c for t in target) and '_prev' not in c])
+    print("--------------------------------------------------");
+    # Prepare arrays
+    x = df_final[feature_cols].values
+    y = df_final[target].values
+    delta_y = y - df_final[[f"{c}_prev" for c in target]].values
+
+    return x, delta_y
+
+
+
+def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    """Prepare multivariate features and delta targets without leakage."""
+    granularity = ["fiscal_year", "facility_id"]
+
+    dimensions = [
+        # New metrics
+        "mort_30_ami_achievement_threshold",
+        "mort_30_ami_benchmark",
+        "mort_30_hf_achievement_threshold",
+        "mort_30_hf_benchmark",
+        "mort_30_pn_achievement_threshold",
+        "mort_30_pn_benchmark",
+        "mort_30_copd_achievement_threshold",
+        "mort_30_copd_benchmark",
+        "mort_30_cabg_achievement_threshold",
+        "mort_30_cabg_benchmark",
+        "comp_hip_knee_achievement_threshold",
+        "comp_hip_knee_benchmark",
+        # Prior metrics
+        "mort_30_ami_baseline_rate",
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_baseline_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_baseline_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_baseline_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_baseline_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_baseline_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    target = [
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
     df_perf = df[granularity + dimensions]
 
-    # --- Step 4: Shift previous year ---
     df_prev = df_perf.copy()
     df_prev["fiscal_year"] += 1
-    df_prev = df_prev.rename(columns={c: c + "_prev" for c in dimensions})
+    df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in dimensions})
 
-    # Merge current year with previous year
     df_merged = pd.merge(
         df_perf, df_prev, on=["facility_id", "fiscal_year"], how="inner"
     )
 
-    # Drop rows with NaNs in features or targets
-    cols_to_check = target + [c + "_prev" for c in dimensions]
-    df_clean = df_merged.dropna(subset=cols_to_check)
+    prev_cols = dimensions
 
-    x = df_clean[[c + "_prev" for c in dimensions]].values
-    y = df_clean[target].values
-    target_prev_cols = [c + "_prev" for c in target]
-    delta_y = y - df_clean[target_prev_cols].values
+    # Drop NaNs
+    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
+    df_final = df_merged.dropna(subset=cols_to_check)
 
-    assert isinstance(x, np.ndarray)
-    assert isinstance(y, np.ndarray)
-    assert isinstance(delta_y, np.ndarray)
+    # Features: exclude previous-year targets to avoid leakage
+    feature_cols = [f"{c}_prev" for c in prev_cols if c not in target]
+
+    x = df_final[feature_cols].values
+    y = df_final[target].values
+    delta_y = y - df_final[[f"{c}_prev" for c in target]].values
 
     return x, delta_y
 
 
 def structure_data_ar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
-    # --- Step 3: Focus on performance columns ---
+    """Prepare autoregressive features for a single target (AMI)."""
     performance_cols = [c for c in df.columns if "performance_rate" in c]
     df_perf = df[["facility_id", "fiscal_year"] + performance_cols]
 
-    # --- Step 4: Shift previous year ---
     df_prev = df_perf.copy()
     df_prev["fiscal_year"] += 1
-    df_prev = df_prev.rename(columns={c: c + "_prev" for c in performance_cols})
+    df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in performance_cols})
 
     df_merged = pd.merge(
         df_perf, df_prev, on=["facility_id", "fiscal_year"], how="inner"
     )
 
-    # --- Step 5: Drop NaNs for target metric ---
     cols_to_check = [
         "mort_30_ami_performance_rate",
         "mort_30_ami_performance_rate_prev",
     ]
     df_clean = df_merged.dropna(subset=cols_to_check)
 
-    # --- Step 6: Prepare data for regression ---
     x = df_clean[["mort_30_ami_performance_rate_prev"]].values
     y = df_clean["mort_30_ami_performance_rate"].values
-    assert isinstance(x, np.ndarray)
-    assert isinstance(y, np.ndarray)
-    return (x, y)
+    return x, y
 
 
 def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
-    # model = RandomForestRegressor(n_estimators=1000)
     model = LinearRegression()
     model.fit(x, y)
     return model
 
 
-def metrics(model, x: np.ndarray, y: np.ndarray):
+def fit_lasso_regression(x: np.ndarray, y: np.ndarray, alpha: float = 1e-7) -> MultiTaskLasso:
+    model = MultiTaskLasso(alpha=alpha, max_iter=10_000)
+    model.fit(x, y)
+    return model
+
+
+def fit_decision_tree_regression(x: np.ndarray, y: np.ndarray) -> DecisionTreeRegressor:
+    # model = DecisionTreeRegressor()
+    # model = DecisionTreeRegressor(
+    #     max_depth=6,           # Shallow tree
+    #     min_samples_split=15,  
+    #     min_samples_leaf=15,
+    #     random_state=42
+    # )
+    model = DecisionTreeRegressor()
+    model.fit(x, y)
+    return model
+
+
+def metrics(model: Model, x: np.ndarray, y: np.ndarray) -> None:
     y_pred = model.predict(x)
-    r2 = model.score(x, y)
-    r2_manual = r2_score(y, y_pred)
-
-    # print("Coefficient (A):", model.coef_[0])
-    # print("Intercept:", model.intercept_)
-    print(f"R² (explained variance): {r2:.4f}")
-    print(f"R² (manual check): {r2_manual:.4f}")
+    print(f"R² (model score): {model.score(x, y):.4f}")
+    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
 
 
-def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: list):
-    """
-    Creates a grid of scatterplots comparing actual vs predicted year-over-year changes.
+def metrics_relative(model: Model, x: np.ndarray, y: np.ndarray) -> None:
+    y_pred = model.predict(x)
+    mae_rel = np.mean(np.abs(y - y_pred)) / np.mean(np.abs(y))
+    print(f"R² (model score): {model.score(x, y):.4f}")
+    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
+    print(f"Relative MAE: {mae_rel:.4f}")
 
-    Args:
-        y_true: (n_samples, n_targets) array of true delta values
-        y_pred: (n_samples, n_targets) array of predicted delta values
-        target_names: list of target column names
-    """
+
+def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: List[str]) -> None:
     n_targets = y_true.shape[1]
     ncols = 3
     nrows = int(np.ceil(n_targets / ncols))
@@ -174,14 +283,9 @@ def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: lis
         if i >= n_targets:
             ax.axis("off")
             continue
-
         ax.scatter(y_true[:, i], y_pred[:, i], alpha=0.6)
-        ax.plot(
-            [y_true[:, i].min(), y_true[:, i].max()],
-            [y_true[:, i].min(), y_true[:, i].max()],
-            "r--",
-            linewidth=1,
-        )  # 45-degree line
+        min_val, max_val = y_true[:, i].min(), y_true[:, i].max()
+        ax.plot([min_val, max_val], [min_val, max_val], "r--", linewidth=1)
         ax.set_title(target_names[i])
         ax.set_xlabel("Δy true")
         ax.set_ylabel("Δy predicted")
@@ -192,35 +296,39 @@ def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: lis
 
 
 if __name__ == "__main__":
-    data = load_data()
-    x, y = structure_data_multivar(data)
+    df = load_data()
+    df_read = load_readmissions_scaled()
+
+    x, y = structure_data_multivar_with_readmissions(df, df_read)
+    # x, y = structure_data_multivar(df)
+
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.1, random_state=42
+        x, y, test_size=0.2, random_state=69
     )
-    model = fit_linear_regression(x_train, y_train)
+
+    # model = fit_linear_regression(x_train, y_train)
+    model = fit_decision_tree_regression(x_train, y_train)
+    # model = fit_lasso_regression(x_train, y_train)
+
     print("Metrics on training set:")
     metrics(model, x_train, y_train)
 
     print("\nMetrics on test set:")
     metrics(model, x_test, y_test)
+    metrics_relative(model, x_test, y_test)
 
-    y_pred = model.predict(x_test)  # predicted delta
-    delta_pred = y_pred  # no further subtraction
-    delta_true = y_test  # already delta_y
+    delta_pred = model.predict(x_test)
+    delta_true = y_test
+
     print(
-        "y_test (true delta) min/max/mean:", y_test.min(), y_test.max(), y_test.mean()
+        "Δy true min/max/mean:", delta_true.min(), delta_true.max(), delta_true.mean()
     )
     print(
-        "y_pred (predicted delta) min/max/mean:",
-        y_pred.min(),
-        y_pred.max(),
-        y_pred.mean(),
+        "Δy predicted min/max/mean:",
+        delta_pred.min(),
+        delta_pred.max(),
+        delta_pred.mean(),
     )
-
-    # Predict delta
-    # y_pred = model.predict(x_test)
-    # delta_pred = y_pred - x_test[:, :y_test.shape[1]]   # predicted change
-    # delta_true = y_test - x_test[:, :y_test.shape[1]]   # actual change
 
     target_names = [
         "mort_30_ami_performance_rate",
@@ -232,3 +340,4 @@ if __name__ == "__main__":
     ]
 
     plot_delta_scatter(delta_true, delta_pred, target_names)
+
