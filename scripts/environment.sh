@@ -12,6 +12,7 @@ initialize_environment() {
     fi
 }
 
+
 check_variables() {
     required_vars=(
         DATABASE
