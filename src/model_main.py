@@ -2,7 +2,11 @@ from __future__ import annotations
 import sqlite3
 import numpy as np
 import pandas as pd
-from typing import Tuple, Protocol
+from typing import (
+    List,
+    Protocol,
+    Tuple,
+)
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 
@@ -20,7 +24,63 @@ def load_data() -> pd.DataFrame:
         return pd.read_sql_query("SELECT * FROM hvbp_clinical_outcomes;", conn)
 
 
-def structure_data(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
+    # Input measures
+    granularity: List[str] = [
+        "fiscal_year",
+        "facility_id",
+    ]
+
+    dimensions: List[str] = [
+        "mort_30_ami_baseline_rate",
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_baseline_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_baseline_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_baseline_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_baseline_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_baseline_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+    target: List[str] = [
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    # --- Step 3: Focus on relevant columns ---
+    df_perf = df[granularity + dimensions]
+
+    # --- Step 4: Shift previous year ---
+    df_prev = df_perf.copy()
+    df_prev["fiscal_year"] += 1
+    df_prev = df_prev.rename(columns={c: c + "_prev" for c in dimensions})
+
+    # Merge current year with previous year
+    df_merged = pd.merge(
+        df_perf, df_prev, on=["facility_id", "fiscal_year"], how="inner"
+    )
+
+    # Drop rows with NaNs in features or targets
+    cols_to_check = target + [c + "_prev" for c in dimensions]
+    df_clean = df_merged.dropna(subset=cols_to_check)
+
+    # Prepare X (previous year features) and y (current year targets)
+    x = df_clean[[c + "_prev" for c in dimensions]].values
+    y = df_clean[target].values
+
+    assert isinstance(x, np.ndarray)
+    assert isinstance(y, np.ndarray)
+    return x, y
+
+
+def structure_data_ar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     # --- Step 3: Focus on performance columns ---
     performance_cols = [c for c in df.columns if "performance_rate" in c]
     df_perf = df[["facility_id", "fiscal_year"] + performance_cols]
@@ -68,6 +128,7 @@ def metrics(model, x: np.ndarray, y: np.ndarray):
 
 if __name__ == "__main__":
     data = load_data()
-    x, y = structure_data(data)
+    # x, y = structure_data_ar(data)
+    x, y = structure_data_multivar(data)
     model = fit_linear_regression(x, y)
     metrics(model, x, y)
