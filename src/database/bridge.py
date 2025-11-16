@@ -1,5 +1,4 @@
-
-
+from initialize_environment import DATABASE
 from pyspark.sql import SparkSession
 from typing import Protocol, Union
 import os
@@ -8,11 +7,7 @@ import pandas as pd
 import sqlite3
 
 
-BACKEND = os.getenv("DB_BACKEND", "sqlite")  # "sqlite" or "spark"
-
-# --- SQLite backend ---
-import sqlite3
-
+BACKEND = os.getenv("BACKEND", "sqlite");
 SQLITE_PATH = os.getenv("SQLITE_PATH", "source.db")
 
 

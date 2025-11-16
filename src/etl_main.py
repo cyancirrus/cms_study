@@ -1,7 +1,4 @@
-from dotenv import load_dotenv
-from typing import Final
 from initialize_environment import DATABASE
-import os
 import pandas as pd
 import re
 import sqlite3
