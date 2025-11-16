@@ -231,3 +231,12 @@ this one is extremely different scale, and has a mean 175 - it's per 1000 so nee
 
 **Goal:** Build a robust, interpretable model that uses prior outcomes and hospital context to forecast performance changes.
 
+
+## Next Steps / Modeling Notes
+
+- **Feature Expansion:** Include patient experience (HCAHPS), safety/complication measures, hospital type, MSA demographics, and financial metrics.  
+- **Regularization:** Use Lasso/Ridge to handle many features and pull out signal efficiently.  
+- **Multi-target Modeling:** Explore predictive relationships across multiple outcomes simultaneously.  
+- **Forecasting & Recommendations:** Use Δy/year-over-year models to generate actionable recommendations for hospitals and patients.  
+- **Signal Enrichment:** Investigate external demographics, income, population density, and prior-year measures to improve predictive power.
+
