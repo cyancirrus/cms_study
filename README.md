@@ -194,3 +194,40 @@ PSI_90|CMS Medicare PSI 90: Patient safety and adverse events composite
 
 this one is extremely different scale, and has a mean 175 - it's per 1000 so need to divide it by 1000
 "Death rate among surgical inpatients with serious treatable complications",
+
+# Data Enrichment & Modeling Notes
+
+**Current focus:** Predict Medicare-related hospital mortality/complication measures (Δy year-over-year).
+
+## Potential Predictive Features
+
+- **Hospital outcomes & complications**  
+  - `Complications_and_Deaths-Hospital.csv`  
+  - Includes AMI, HF, PN, COPD, CABG, hip/knee complications, PSI measures  
+  - Use raw rates, aggregates, or weighted scores  
+
+- **Safety & quality programs**  
+  - HAC reduction (`FY_2025_HAC_Reduction_Program_Hospital.csv`)  
+  - Readmission rates (`FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv`)  
+
+- **Patient experience**  
+  - HCAHPS scores (`HCAHPS-Hospital.csv`, `PCH_HCAHPS_HOSPITAL.csv`)  
+
+- **Hospital financials**  
+  - Medicare spending per patient (`Medicare_Hospital_Spending_Per_Patient-Hospital.csv`)  
+
+- **Care process measures**  
+  - Timely and effective care (`Timely_and_Effective_Care-Hospital.csv`)  
+
+- **Demographics / geography**  
+  - MSA, population density, median income (via RUCA/ZIP/MSA mapping)  
+
+## Approach
+
+- Align all features by `hospital_id` & `fiscal_year`.  
+- Lag previous-year measures to model Δy (year-over-year change).  
+- Normalize/scale measures as needed.  
+- Feed into AR(1)/delta multivariate regression for predictive modeling.  
+
+**Goal:** Build a robust, interpretable model that uses prior outcomes and hospital context to forecast performance changes.
+
