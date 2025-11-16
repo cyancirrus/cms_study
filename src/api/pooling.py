@@ -10,6 +10,7 @@ from queue import Queue
 #     return pool.push(conn); // it's a mutex would need to check locks }
 # }
 
+
 class SQLitePool:
     def __init__(self, db_path: str, max_size: int = 1):
         self._pool = Queue(maxsize=max_size)
@@ -28,6 +29,7 @@ class SQLitePool:
             conn = self._pool.get()
             conn.close()
 
+
 # example
 # pool = SQLitePool("source.db", max_size=2)
 
@@ -39,3 +41,15 @@ class SQLitePool:
 #     finally:
 #         pool.release(conn)
 #     return result
+
+
+
+# NOTE: Spark can already reuse
+
+# from pyspark.sql import SparkSession
+
+# spark = SparkSession.builder.appName("MyApp").getOrCreate()
+
+# def run_query_spark(sql: str):
+#     return spark.sql(sql).toPandas()
+
