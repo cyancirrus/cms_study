@@ -21,13 +21,13 @@ def retrieve_recommended_hospital(
         "type": hospital_type.value,
         "services": [service_category.value],
         "message": "This is a constant response for scaffolding purposes",
-    };
+    }
 
 
 # --- Root endpoint ---
 @app.get("/")
 def root():
-    return {"message": "Hospital Recommendation API is running!"};
+    return {"message": "Hospital Recommendation API is running!"}
 
 
 if __name__ == "__main__":
