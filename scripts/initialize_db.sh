@@ -6,7 +6,7 @@ create_database() {
 }
 
 create_tables() {
-    sqlite3 "$DATABASE" <<EOF
+	sqlite3 "$DATABASE" <<EOF
 .read ./etl/complications_and_deaths.sql
 .read ./etl/fy_hac_reduction_program_hospital.sql
 .read ./etl/fy_hospital_readmissions_reduction_program_hospital.sql
@@ -24,14 +24,14 @@ create_tables() {
 .read ./etl/unplanned_hospital_visits_hospital.sql
 .read ./etl/zip_lat_long.sql
 EOF
-    echo "All typed tables created."
+	echo "All typed tables created."
 }
 
 import_data() {
 	python ./src/etl_main.py
 	echo "Data has been loaded."
 }
-initialize_environment;
-create_database;
-create_tables;
-import_data;
+initialize_environment
+create_database
+create_tables
+import_data

@@ -10,4 +10,4 @@ create_summaries() {
 	echo "Data summaries created"
 }
 
-create_summaries;
+create_summaries
