@@ -1,8 +1,11 @@
 from fastapi import FastAPI, Query
-from ..types.categories import HospitalType, ServiceCategory
+from src.types.categories import HospitalType, ServiceCategory
 
 app = FastAPI(title="Hospital Recommendation API")
 
+@app.get("/favicon.ico")
+def favicon():
+    return {}
 
 @app.get("/recommend_hospital")
 def retrieve_recommended_hospital(
@@ -21,14 +24,10 @@ def retrieve_recommended_hospital(
         "type": hospital_type.value,
         "services": [service_category.value],
         "message": "This is a constant response for scaffolding purposes",
-    }
+    };
 
 
-# --- Root endpoint ---
+# --- Root endpoint --e
 @app.get("/")
 def root():
-    return {"message": "Hospital Recommendation API is running!"}
-
-
-if __name__ == "__main__":
-    app.run()
+    return {"message": "Hospital Recommendation API is running!"};
