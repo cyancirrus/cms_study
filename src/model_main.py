@@ -13,6 +13,12 @@ from sklearn.metrics import r2_score
 DATABASE = "source.db"
 
 
+# TODO: Split into train/test/validation
+
+# from sklearn.model_selection import train_test_split
+# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
 class Model(Protocol):
     def fit(self, X: np.ndarray, y: np.ndarray) -> Model: ...
     def predict(self, X: np.ndarray) -> np.ndarray: ...
