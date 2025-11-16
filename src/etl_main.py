@@ -1,9 +1,10 @@
+from dotenv import load_dotenv
 from typing import Final
+from initialize_environment import DATABASE
+import os
 import pandas as pd
-import sqlite3
 import re
-
-DATABASE: Final[str] = "source.db"
+import sqlite3
 
 
 def clean_column_name(col: str) -> str:

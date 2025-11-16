@@ -240,3 +240,6 @@ this one is extremely different scale, and has a mean 175 - it's per 1000 so nee
 - **Forecasting & Recommendations:** Use Δy/year-over-year models to generate actionable recommendations for hospitals and patients.  
 - **Signal Enrichment:** Investigate external demographics, income, population density, and prior-year measures to improve predictive power.
 
+
+- colour by MSA, size, or baseline rate — often patterns pop immediately.
+- colour by hospital type

@@ -11,6 +11,7 @@ from typing import (
 )
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
+
 # from sklearn.ensemble import RandomForestRegressor
 # from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
@@ -152,10 +153,11 @@ def metrics(model, x: np.ndarray, y: np.ndarray):
     print(f"R² (explained variance): {r2:.4f}")
     print(f"R² (manual check): {r2_manual:.4f}")
 
+
 def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: list):
     """
     Creates a grid of scatterplots comparing actual vs predicted year-over-year changes.
-    
+
     Args:
         y_true: (n_samples, n_targets) array of true delta values
         y_pred: (n_samples, n_targets) array of predicted delta values
@@ -165,18 +167,21 @@ def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: lis
     ncols = 3
     nrows = int(np.ceil(n_targets / ncols))
 
-    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5*ncols, 4*nrows))
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5 * ncols, 4 * nrows))
     axes = axes.flatten()
 
     for i, ax in enumerate(axes):
         if i >= n_targets:
-            ax.axis('off')
+            ax.axis("off")
             continue
 
         ax.scatter(y_true[:, i], y_pred[:, i], alpha=0.6)
-        ax.plot([y_true[:, i].min(), y_true[:, i].max()],
-                [y_true[:, i].min(), y_true[:, i].max()],
-                'r--', linewidth=1)  # 45-degree line
+        ax.plot(
+            [y_true[:, i].min(), y_true[:, i].max()],
+            [y_true[:, i].min(), y_true[:, i].max()],
+            "r--",
+            linewidth=1,
+        )  # 45-degree line
         ax.set_title(target_names[i])
         ax.set_xlabel("Δy true")
         ax.set_ylabel("Δy predicted")
@@ -186,12 +191,11 @@ def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: lis
     plt.close()
 
 
-
 if __name__ == "__main__":
     data = load_data()
     x, y = structure_data_multivar(data)
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, random_state=42
+        x, y, test_size=0.1, random_state=42
     )
     model = fit_linear_regression(x_train, y_train)
     print("Metrics on training set:")
@@ -200,12 +204,19 @@ if __name__ == "__main__":
     print("\nMetrics on test set:")
     metrics(model, x_test, y_test)
 
-    y_pred = model.predict(x_test)        # predicted delta
-    delta_pred = y_pred                    # no further subtraction
-    delta_true = y_test                     # already delta_y
-    print("y_test (true delta) min/max/mean:", y_test.min(), y_test.max(), y_test.mean())
-    print("y_pred (predicted delta) min/max/mean:", y_pred.min(), y_pred.max(), y_pred.mean())
-    
+    y_pred = model.predict(x_test)  # predicted delta
+    delta_pred = y_pred  # no further subtraction
+    delta_true = y_test  # already delta_y
+    print(
+        "y_test (true delta) min/max/mean:", y_test.min(), y_test.max(), y_test.mean()
+    )
+    print(
+        "y_pred (predicted delta) min/max/mean:",
+        y_pred.min(),
+        y_pred.max(),
+        y_pred.mean(),
+    )
+
     # Predict delta
     # y_pred = model.predict(x_test)
     # delta_pred = y_pred - x_test[:, :y_test.shape[1]]   # predicted change
@@ -221,4 +232,3 @@ if __name__ == "__main__":
     ]
 
     plot_delta_scatter(delta_true, delta_pred, target_names)
-

@@ -1,4 +1,5 @@
 #!/bin/bash
+source ./scripts/environment.sh
 
 model_explore() {
 	python ./src/model_main.py

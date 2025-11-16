@@ -1,5 +1,6 @@
-import sys
 from typing import Final
+from dotenv import load_dotenv
+from initialize_environment import DATABASE
 from visualization.report import (
     log_report_start,
     report_hvbp_tps,
@@ -12,11 +13,14 @@ from visualization.report import (
     # report_zeroized_general_hospital_by_type,
     # report_zeroized_general_hospital_by_facility,
 )
+import os
+import sys
 
 # TODO: - Create exclusion column for "too little data" if it's a rate
 
 YEAR: Final[int] = int(sys.argv[1])
-DATABASE: Final[str] = "source.db"
+load_dotenv()
+DATABASE: Final[str] = str(os.getenv("DATABASE"))
 
 if __name__ == "__main__":
 

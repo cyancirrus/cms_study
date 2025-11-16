@@ -1,14 +1,12 @@
 #!/bin/bash
-
-# SQLite database
-DB="source.db"
+source ./scripts/environment.sh
 
 create_database() {
-	touch "$DB"
+	touch "$DATABASE"
 }
 
 create_tables() {
-    sqlite3 "$DB" <<EOF
+    sqlite3 "$DATABASE" <<EOF
 .read ./etl/complications_and_deaths.sql
 .read ./etl/fy_hac_reduction_program_hospital.sql
 .read ./etl/fy_hospital_readmissions_reduction_program_hospital.sql
@@ -33,7 +31,7 @@ import_data() {
 	python ./src/etl_main.py
 	echo "Data has been loaded."
 }
-
+initialize_environment;
 create_database;
 create_tables;
 import_data;

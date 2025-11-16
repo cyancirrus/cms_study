@@ -1,11 +1,7 @@
-import matplotlib
-from sqlalchemy import create_engine
 from typing import Dict
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import sqlite3
-import sys
 
 
 def column_filter_summary(
