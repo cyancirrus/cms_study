@@ -243,3 +243,7 @@ this one is extremely different scale, and has a mean 175 - it's per 1000 so nee
 
 - colour by MSA, size, or baseline rate — often patterns pop immediately.
 - colour by hospital type
+
+// when doing the like connection singleton and bridge
+connect(DB_PATH, check_same_thread=False)
+
