@@ -1,4 +1,6 @@
 from __future__ import annotations
+import matplotlib.pyplot as plt
+import numpy as np
 import sqlite3
 import numpy as np
 import pandas as pd
@@ -132,6 +134,39 @@ def metrics(model, x: np.ndarray, y: np.ndarray):
     print(f"R² (explained variance): {r2:.4f}")
     print(f"R² (manual check): {r2_manual:.4f}")
 
+def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: list):
+    """
+    Creates a grid of scatterplots comparing actual vs predicted year-over-year changes.
+    
+    Args:
+        y_true: (n_samples, n_targets) array of true delta values
+        y_pred: (n_samples, n_targets) array of predicted delta values
+        target_names: list of target column names
+    """
+    n_targets = y_true.shape[1]
+    ncols = 3
+    nrows = int(np.ceil(n_targets / ncols))
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(5*ncols, 4*nrows))
+    axes = axes.flatten()
+
+    for i, ax in enumerate(axes):
+        if i >= n_targets:
+            ax.axis('off')
+            continue
+
+        ax.scatter(y_true[:, i], y_pred[:, i], alpha=0.6)
+        ax.plot([y_true[:, i].min(), y_true[:, i].max()],
+                [y_true[:, i].min(), y_true[:, i].max()],
+                'r--', linewidth=1)  # 45-degree line
+        ax.set_title(target_names[i])
+        ax.set_xlabel("Δy true")
+        ax.set_ylabel("Δy predicted")
+
+    plt.tight_layout()
+    plt.show()
+
+
 
 if __name__ == "__main__":
     data = load_data()
@@ -145,3 +180,21 @@ if __name__ == "__main__":
 
     print("\nMetrics on test set:")
     metrics(model, x_test, y_test)
+
+    
+    # Predict delta
+    y_pred = model.predict(x_test)
+    delta_pred = y_pred - x_test[:, :y_test.shape[1]]   # predicted change
+    delta_true = y_test - x_test[:, :y_test.shape[1]]   # actual change
+
+    target_names = [
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    plot_delta_scatter(delta_true, delta_pred, target_names)
+
