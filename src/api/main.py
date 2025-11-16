@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query
-from src.types.categories import HospitalType, ServiceCategory
+from src.app_types.categories import HospitalType, ServiceCategory
 
 app = FastAPI(title="Hospital Recommendation API")
 

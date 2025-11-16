@@ -1,6 +1,9 @@
 pre-commit:
-  # parallel: true  # run tasks in parallel
+  # parallel: true  # optional
   commands:
+    unit-tests:
+      run: |
+        PYTHONPATH=./ pytest ./tests
     format-python:
       run: |
         black .
@@ -9,6 +12,7 @@ pre-commit:
       run: |
         shfmt -w ./scripts
       glob: "*.sh"
+
 # TODO: port these to scripts and add unit tests
 # pre-commit:
 #   parallel: true
