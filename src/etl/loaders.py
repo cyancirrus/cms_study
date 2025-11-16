@@ -76,5 +76,3 @@ def load_and_clean_and_append_year_csv(path: str, year: int) -> pd.DataFrame:
         pass
     assert isinstance(df, pd.DataFrame)
     return df
-
-
