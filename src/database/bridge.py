@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import pyspark
+from typing import List
+
 
 BACKEND = os.getenv("DB_BACKEND", "sqlite")  # "sqlite" or "spark"
 
@@ -52,3 +54,40 @@ def query(sql: str, params=None) -> pd.DataFrame:
         return _spark_query(sql, params=params)
     else:
         raise ValueError(f"Unknown DB_BACKEND={BACKEND!r}")
+
+
+
+from typing import Protocol, Union
+import sqlite3
+from pyspark.sql import SparkSession
+import pandas as pd
+
+class EngineProtocol(Protocol):
+    def get_connection(self) -> Union[sqlite3.Connection, SparkSession]:
+        ...
+
+    def run_query(self, query: str) -> pd.DataFrame:
+        ...
+
+
+class SQLiteEngine:
+    def __init__(self, db_path: str):
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+
+    def get_connection(self):
+        return self.conn
+
+    def run_query(self, query: str) -> pd.DataFrame:
+        cursor = self.conn.execute(query)
+        rows = cursor.fetchall()
+        columns = [str(desc[0]) for desc in cursor.description]
+        df =  pd.DataFrame(rows);
+        df.columns = columns;
+        return df
+
+
+
+def query_bridge(engine: EngineProtocol, query: str) -> pd.DataFrame:
+    conn = engine.get_connection()  # could be reused / pooled
+    return engine.run_query(query)
+

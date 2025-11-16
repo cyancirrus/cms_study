@@ -43,7 +43,6 @@ class SQLitePool:
 #     return result
 
 
-
 # NOTE: Spark can already reuse
 
 # from pyspark.sql import SparkSession
@@ -52,4 +51,3 @@ class SQLitePool:
 
 # def run_query_spark(sql: str):
 #     return spark.sql(sql).toPandas()
-
