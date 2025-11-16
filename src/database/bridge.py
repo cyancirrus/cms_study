@@ -9,6 +9,7 @@ import sqlite3
 
 SQLITE_PATH = os.getenv("SQLITE_PATH", "source.db")
 
+
 def _sqlite_query(sql: str, params=None) -> pd.DataFrame:
     conn = sqlite3.connect(SQLITE_PATH)
     try:
@@ -20,16 +21,15 @@ def _sqlite_query(sql: str, params=None) -> pd.DataFrame:
 # --- Spark backend (stubbed, fill in later) ---
 _SPARK = None
 
+
 def _get_spark():
     global _SPARK
     if _SPARK is None:
         from pyspark.sql import SparkSession
-        _SPARK = (
-            SparkSession.builder
-            .appName("healthy_sphinx")
-            .getOrCreate()
-        )
+
+        _SPARK = SparkSession.builder.appName("healthy_sphinx").getOrCreate()
     return _SPARK
+
 
 def _spark_query(sql: str, params=None) -> pd.DataFrame:
     spark = _get_spark()
@@ -52,4 +52,3 @@ def query(sql: str, params=None) -> pd.DataFrame:
         return _spark_query(sql, params=params)
     else:
         raise ValueError(f"Unknown DB_BACKEND={BACKEND!r}")
-
