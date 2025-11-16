@@ -42,13 +42,13 @@ create_tables() {
 		"./etl/augmented/zip_lat_long.sql"
 	)
 	for sql_file in "${sql_files[@]}"; do
-        if [ ! -f "$sql_file" ]; then
-            exit_with_error "Missing SQL file: $sql_file"
-        fi
-        log "Importing $sql_file..."
-        sqlite3 "$DATABASE" ".read $sql_file" || exit_with_error "Failed to execute $sql_file"
-    done
-    log "All tables created successfully."
+		if [ ! -f "$sql_file" ]; then
+			exit_with_error "Missing SQL file: $sql_file"
+		fi
+		log "Importing $sql_file..."
+		sqlite3 "$DATABASE" ".read $sql_file" || exit_with_error "Failed to execute $sql_file"
+	done
+	log "All tables created successfully."
 }
 
 import_data() {

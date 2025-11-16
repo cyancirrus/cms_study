@@ -97,22 +97,21 @@ def structure_data_multivar_with_readmissions(
         "comp_hip_knee_performance_rate",
     ]
 
-     # Merge with readmissions data
+    # Merge with readmissions data
     df_merged = pd.merge(df, df_read, on=["facility_id", "fiscal_year"], how="left")
 
     # Shift FORWARD to get previous year's data
     df_prev = df_merged.copy()
     df_prev["fiscal_year"] += 1  # ← CHANGE THIS (was -= 1)
-    
-    prev_cols = dimensions + list(df_read.columns.difference(["facility_id", "fiscal_year"]))
+
+    prev_cols = dimensions + list(
+        df_read.columns.difference(["facility_id", "fiscal_year"])
+    )
     df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in prev_cols})
 
     # Now current year row gets actual previous year's features
     df_final = pd.merge(
-        df_merged,
-        df_prev,
-        on=["facility_id", "fiscal_year"],
-        how="inner"
+        df_merged, df_prev, on=["facility_id", "fiscal_year"], how="inner"
     )
 
     # Drop rows with NaNs in any required columns
@@ -126,18 +125,20 @@ def structure_data_multivar_with_readmissions(
     print("Number of features:", len(feature_cols))
     print("Feature columns:", feature_cols)
     print("\nTarget columns we're predicting:", target)
-    print("--------------------------------------------------");
+    print("--------------------------------------------------")
     print("\nChecking for leakage:")
     print("Columns in df_final:", df_final.columns.tolist())
-    print("\nAny non-_prev target columns in features?", [c for c in feature_cols if any(t in c for t in target) and '_prev' not in c])
-    print("--------------------------------------------------");
+    print(
+        "\nAny non-_prev target columns in features?",
+        [c for c in feature_cols if any(t in c for t in target) and "_prev" not in c],
+    )
+    print("--------------------------------------------------")
     # Prepare arrays
     x = df_final[feature_cols].values
     y = df_final[target].values
     delta_y = y - df_final[[f"{c}_prev" for c in target]].values
 
     return x, delta_y
-
 
 
 def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
@@ -238,7 +239,9 @@ def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
     return model
 
 
-def fit_lasso_regression(x: np.ndarray, y: np.ndarray, alpha: float = 1e-7) -> MultiTaskLasso:
+def fit_lasso_regression(
+    x: np.ndarray, y: np.ndarray, alpha: float = 1e-7
+) -> MultiTaskLasso:
     model = MultiTaskLasso(alpha=alpha, max_iter=10_000)
     model.fit(x, y)
     return model
@@ -248,7 +251,7 @@ def fit_decision_tree_regression(x: np.ndarray, y: np.ndarray) -> DecisionTreeRe
     # model = DecisionTreeRegressor()
     # model = DecisionTreeRegressor(
     #     max_depth=6,           # Shallow tree
-    #     min_samples_split=15,  
+    #     min_samples_split=15,
     #     min_samples_leaf=15,
     #     random_state=42
     # )
@@ -271,7 +274,9 @@ def metrics_relative(model: Model, x: np.ndarray, y: np.ndarray) -> None:
     print(f"Relative MAE: {mae_rel:.4f}")
 
 
-def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: List[str]) -> None:
+def plot_delta_scatter(
+    y_true: np.ndarray, y_pred: np.ndarray, target_names: List[str]
+) -> None:
     n_targets = y_true.shape[1]
     ncols = 3
     nrows = int(np.ceil(n_targets / ncols))
@@ -340,4 +345,3 @@ if __name__ == "__main__":
     ]
 
     plot_delta_scatter(delta_true, delta_pred, target_names)
-
