@@ -10,6 +10,9 @@ from typing import (
     Tuple,
 )
 from sklearn.linear_model import LinearRegression
+from sklearn.tree import DecisionTreeRegressor
+# from sklearn.ensemble import RandomForestRegressor
+# from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
@@ -38,6 +41,20 @@ def structure_data_multivar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
     ]
 
     dimensions: List[str] = [
+        # New
+        "mort_30_ami_achievement_threshold",
+        "mort_30_ami_benchmark",
+        "mort_30_hf_achievement_threshold",
+        "mort_30_hf_benchmark",
+        "mort_30_pn_achievement_threshold",
+        "mort_30_pn_benchmark",
+        "mort_30_copd_achievement_threshold",
+        "mort_30_copd_benchmark",
+        "mort_30_cabg_achievement_threshold",
+        "mort_30_cabg_benchmark",
+        "comp_hip_knee_achievement_threshold",
+        "comp_hip_knee_benchmark",
+        # Prior
         "mort_30_ami_baseline_rate",
         "mort_30_ami_performance_rate",
         "mort_30_hf_baseline_rate",
@@ -119,6 +136,7 @@ def structure_data_ar(df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
+    # model = RandomForestRegressor(n_estimators=1000)
     model = LinearRegression()
     model.fit(x, y)
     return model
@@ -129,8 +147,8 @@ def metrics(model, x: np.ndarray, y: np.ndarray):
     r2 = model.score(x, y)
     r2_manual = r2_score(y, y_pred)
 
-    print("Coefficient (A):", model.coef_[0])
-    print("Intercept:", model.intercept_)
+    # print("Coefficient (A):", model.coef_[0])
+    # print("Intercept:", model.intercept_)
     print(f"R² (explained variance): {r2:.4f}")
     print(f"R² (manual check): {r2_manual:.4f}")
 
@@ -165,6 +183,7 @@ def plot_delta_scatter(y_true: np.ndarray, y_pred: np.ndarray, target_names: lis
 
     plt.tight_layout()
     plt.show()
+    plt.close()
 
 
 
@@ -181,11 +200,16 @@ if __name__ == "__main__":
     print("\nMetrics on test set:")
     metrics(model, x_test, y_test)
 
+    y_pred = model.predict(x_test)        # predicted delta
+    delta_pred = y_pred                    # no further subtraction
+    delta_true = y_test                     # already delta_y
+    print("y_test (true delta) min/max/mean:", y_test.min(), y_test.max(), y_test.mean())
+    print("y_pred (predicted delta) min/max/mean:", y_pred.min(), y_pred.max(), y_pred.mean())
     
     # Predict delta
-    y_pred = model.predict(x_test)
-    delta_pred = y_pred - x_test[:, :y_test.shape[1]]   # predicted change
-    delta_true = y_test - x_test[:, :y_test.shape[1]]   # actual change
+    # y_pred = model.predict(x_test)
+    # delta_pred = y_pred - x_test[:, :y_test.shape[1]]   # predicted change
+    # delta_true = y_test - x_test[:, :y_test.shape[1]]   # actual change
 
     target_names = [
         "mort_30_ami_performance_rate",
