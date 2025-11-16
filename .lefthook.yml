@@ -1,11 +1,9 @@
 pre-commit:
-  parallel: true  # run tasks in parallel
+  parallel: true
   commands:
     format-python:
-      run: |
-        black .
+      run: black .
       glob: "*.py"
     format-shell:
-      run: |
-        shfmt -w ./scripts
+      run: shfmt -w ./scripts
       glob: "*.sh"

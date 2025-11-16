@@ -27,7 +27,7 @@ def retrieve_recommended_hospital(
 # --- Root endpoint ---
 @app.get("/")
 def root():
-    return {"message": "Hospital Recommendation API is running!"}
+    return {"message": "Hospital Recommendation API is running!"};
 
 
 if __name__ == "__main__":
