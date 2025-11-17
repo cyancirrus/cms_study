@@ -101,15 +101,47 @@ def extract_cms_data(database: str, directory: str, year: int):
 def extract_augmented_tables(database: str):
     # TODO: Set up definitions for msa want to check if like we can get historical data in
     process_table_method(
-    load_and_enrich_region_csv,
-
-        database, "./data/augmented/region/state_region.csv", "state_region", 2025
+        load_and_enrich_region_csv,
+        database,
+        "./data/augmented/region/state_region.csv",
+        "state_region",
+        2025,
     )
-    process_table_method(load_and_map_msa_dim, database, "./data/augmented/msa/zip_lat_long.csv", "zip_lat_long", 2015)
-    process_table_method(load_and_map_msa_centroids, database, "./data/augmented/msa_centroids.csv", "msa_centroids", 2025)
-    process_table_method(load_and_map_msa_dim, database, "./data/augmented/msa_dim.csv", "msa_dim", 2015)
-    process_table_method(load_and_map_msa_statistics, database, "./data/augmented/msa_statistics.csv", "msa_statistics", 2023)
-    process_table_method(load_and_map_msa_zip, database, "./data/augmented/zip_lat_long.csv", "zip_lat_long", 2015)
+    process_table_method(
+        load_and_map_msa_zip,
+        database,
+        "./data/augmented/msa/zip_lat_long.csv",
+        "zip_lat_long",
+        2015,
+    )
+    process_table_method(
+        load_and_map_msa_centroids,
+        database,
+        "./data/augmented/msa/msa_centroids.csv",
+        "msa_centroids",
+        2025,
+    )
+    process_table_method(
+        load_and_map_msa_dim,
+        database,
+        "./data/augmented/msa_dim.csv",
+        "msa_dim",
+        2015
+    )
+    process_table_method(
+        load_and_map_msa_statistics,
+        database,
+        "./data/augmented/msa/msa_statistics.csv",
+        "msa_statistics",
+        2023,
+    )
+    process_table_method(
+        load_and_map_msa_zip,
+        database,
+        "./data/augmented/zip_lat_long.csv",
+        "zip_lat_long",
+        2015,
+    )
 
 
 def extract_all_years_cms(database: str):

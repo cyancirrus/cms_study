@@ -12,6 +12,10 @@ exit_with_error() {
 	exit 1
 }
 
+remove_database() {
+	rm "$DATABASE"
+}
+
 create_database() {
 	if [ ! -f "$DATABASE" ]; then
 		touch "$DATABASE" || exit_with_error "Failed to create database file $DATABASE"
@@ -38,6 +42,10 @@ create_tables() {
 		"./etl/source/pch_hcahps_hospital.sql"
 		"./etl/source/timely_and_effective_care_hospital.sql"
 		"./etl/source/unplanned_hospital_visits_hospital.sql"
+		
+		"./etl/augmented/msa_centroid.sql"
+		"./etl/augmented/msa_dim.sql"
+		"./etl/augmented/msa_statistics.sql"
 		"./etl/augmented/state_region.sql"
 		"./etl/augmented/zip_lat_long.sql"
 	)
@@ -59,6 +67,7 @@ import_data() {
 
 initialize_environment
 
+remove_database
 create_database
 create_tables
 import_data

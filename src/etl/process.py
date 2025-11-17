@@ -25,10 +25,12 @@ def process_table_method(
     df = func(data_path, year)
     insert_into_existing_table(df, database, table_name)
 
+
 def process_table(database: str, data_path: str, table_name: str):
     print(f"loading table: {table_name}")
     df = load_and_clean_csv(data_path)
     insert_into_existing_table(df, database, table_name)
+
 
 def process_table_region(database: str, data_path: str, table_name: str):
     print(f"loading table: {table_name}")

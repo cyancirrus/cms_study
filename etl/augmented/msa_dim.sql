@@ -5,5 +5,5 @@ create table msa_dim (
     cbsa_title TEXT,
     -- STATE -> state_abbreviation
     state_abbreviation TEXT    
-;
+);
 

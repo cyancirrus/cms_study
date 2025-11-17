@@ -31,7 +31,7 @@ def load_and_clean_csv(path: str) -> pd.DataFrame:
     return df
 
 
-def load_and_enrich_region_csv(path: str, year:int) -> pd.DataFrame:
+def load_and_enrich_region_csv(path: str, year: int) -> pd.DataFrame:
     # Areas like midwest atlantic data isfrom 2017 but shoudld be stable
     df = pd.read_csv(
         path,
