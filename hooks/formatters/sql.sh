@@ -1,5 +1,11 @@
 #!/bin/bash
-set -e # exit immediately if any command fails
+set -e
 
-sqlformat . --reindent --keywords upper -i
+# Loop over staged files passed by Lefthook
+for f in "$@"; do
+    sqlformat "$f" --reindent --keywords upper -i
+done
+
+git add "$@"
+
 # git add --all :/
