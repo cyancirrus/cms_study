@@ -53,7 +53,7 @@ https://data-usdot.opendata.arcgis.com/datasets/usdot::core-based-statistical-ar
 ## MSA statistics
 https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas
 
-## MSA IDs // 
+## MSA dim // 
 https://www.census.gov/geographies/reference-maps/2020/geo/cbsa.html
 https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2015/delineation-files/list1.xlsx
 

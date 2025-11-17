@@ -5,7 +5,7 @@ from etl.process import (
 )
 
 
-def extract_cms_data(database:str, directory: str, year: int):
+def extract_cms_data(database: str, directory: str, year: int):
     print("----------------------------------------")
     print(f"        Loading year {year}            ")
     print("----------------------------------------")
@@ -34,8 +34,7 @@ def extract_cms_data(database:str, directory: str, year: int):
         year,
     )
     process_table_append_year(
-        database,
-        f"./{directory}/HCAHPS-Hospital.csv", "hcahps_hospital", year
+        database, f"./{directory}/HCAHPS-Hospital.csv", "hcahps_hospital", year
     )
     process_table_append_year(
         database,
@@ -50,8 +49,7 @@ def extract_cms_data(database:str, directory: str, year: int):
         year,
     )
     process_table_append_year(
-        database,
-        f"./{directory}/PCH_HCAHPS_HOSPITAL.csv", "pch_hcahps_hospital", year
+        database, f"./{directory}/PCH_HCAHPS_HOSPITAL.csv", "pch_hcahps_hospital", year
     )
     process_table_append_year(
         database,
@@ -67,7 +65,9 @@ def extract_cms_data(database:str, directory: str, year: int):
     )
     process_table_append_year(
         database,
-        f"./{directory}/hvbp_clinical_outcomes.csv", "hvbp_clinical_outcomes", year
+        f"./{directory}/hvbp_clinical_outcomes.csv",
+        "hvbp_clinical_outcomes",
+        year,
     )
     process_table_append_year(
         database,
@@ -81,15 +81,19 @@ def extract_cms_data(database:str, directory: str, year: int):
         "hvbp_person_and_community_engagement",
         year,
     )
-    process_table_append_year(database, f"./{directory}/hvbp_safety.csv", "hvbp_safety", year)
+    process_table_append_year(
+        database, f"./{directory}/hvbp_safety.csv", "hvbp_safety", year
+    )
     process_table_append_year(database, f"./{directory}/hvbp_tps.csv", "hvbp_tps", year)
     process_table_append_year(database, f"./{directory}/hvbp_tps.csv", "hvbp_tps", year)
     print()
 
 
-def extract_augmented_tables(database:str):
+def extract_augmented_tables(database: str):
     # TODO: Set up definitions for msa want to check if like we can get historical data in
-    process_table_region(database, "./data/augmented/region/state_region.csv", "state_region")
+    process_table_region(
+        database, "./data/augmented/region/state_region.csv", "state_region"
+    )
     process_table(database, "./data/augmented/msa/zip_lat_long.csv", "zip_lat_long")
     # process_table("./data/augmented/msa_centers.csv", "msa_centers")
     # process_table("./data/augmented/msa_id.csv", "msa_id")
@@ -97,7 +101,7 @@ def extract_augmented_tables(database:str):
     # process_table("./data/augmented/zip_lat_long.csv", "zip_lat_long")
 
 
-def extract_all_years_cms(database:str):
+def extract_all_years_cms(database: str):
     # Historical data is only consistent back to 2021
     extract_cms_data(database, "./data/source/", 2025)
     extract_cms_data(database, "./data/historical/2024", 2024)
