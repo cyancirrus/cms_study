@@ -1,3 +1,4 @@
+
 CREATE TABLE unplanned_hospital_visits_hospital (
     submission_year INT,
     facility_id INT,
