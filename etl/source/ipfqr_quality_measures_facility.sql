@@ -10,7 +10,7 @@ CREATE TABLE ipfqr_quality_measures_facility (
     zip_code CHAR(5),
     county_parish TEXT,
     -- per 1000 means per 1000 patient hours
-    
+
     -- mental health: hours of physical restraint use
     hbips2_measure_description TEXT,
     hbips2_overall_rate_per_1000 REAL,
@@ -30,7 +30,7 @@ CREATE TABLE ipfqr_quality_measures_facility (
     smd_percent REAL,
     smd_denominator INT,
     smd_footnote TEXT,
-    
+
     -- alcohol use brief intervention provided or offered
     sub2_2a_measure_description TEXT,
     sub2_percent REAL,
@@ -63,10 +63,10 @@ CREATE TABLE ipfqr_quality_measures_facility (
     tr1_percent REAL,
     tr1_denominator INT,
     tr1_footnote TEXT,
-    
+
     start_date DATE,
     end_date DATE,
-    
+
     -- follow-up after psychiatric hospitalization
     faph_measure_description TEXT,
     faph30_percent REAL,
@@ -106,4 +106,3 @@ CREATE TABLE ipfqr_quality_measures_facility (
     flu_season_start_date DATE,
     flu_season_end_date DATE
 );
-

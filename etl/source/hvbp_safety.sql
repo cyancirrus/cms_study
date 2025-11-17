@@ -65,4 +65,3 @@ CREATE TABLE hvbp_safety (
     hai6_improvement_points TEXT,
     hai6_measure_score TEXT
 );
-

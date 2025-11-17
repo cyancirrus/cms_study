@@ -84,4 +84,3 @@ CREATE TABLE hvbp_person_and_community_engagement (
     hcahps_base_score REAL,
     hcahps_consistency_score REAL
 );
-

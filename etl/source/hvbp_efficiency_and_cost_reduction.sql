@@ -20,4 +20,3 @@ CREATE TABLE hvbp_efficiency_and_cost_reduction (
     mspb1_improvement_points TEXT,
     mspb1_measure_score TEXT
 );
-

@@ -10,7 +10,7 @@ CREATE TABLE fy_hac_reduction_program_hospital (
     facility_id INT,
     state CHAR(2),
     fiscal_year INT,
-    
+
     -- PSI90 is a composite of 10 different patient safety indicators, including events like:
     --     Pressure ulcers (PSI 03)
     --     Postoperative sepsis (PSI 13)
@@ -24,31 +24,31 @@ CREATE TABLE fy_hac_reduction_program_hospital (
     psi90_start_date DATE,
     psi90_end_date DATE,
     -- SIR :: Standardized Infection Ratio
-    
+
     -- Central Line-Associated Bloodstream Infections (CLABSI
     clabsi_sir REAL,
     clabsi_sir_footnote TEXT,
     clabsi_w_z_score REAL,
     clabsi_w_z_footnote TEXT,
-    
+
     -- Catheter-Associated Urinary Tract Infection (CAUTI)
     cauti_sir REAL,
     cauti_sir_footnote TEXT,
     cauti_w_z_score REAL,
     cauti_w_z_footnote TEXT,
-    
+
     -- Surgical sight infections
     ssi_sir REAL,
     ssi_sir_footnote TEXT,
     ssi_w_z_score REAL,
     ssi_w_z_footnote TEXT,
-    
+
     -- Infection from Clostridioides difficile infections
     cdi_sir REAL,
     cdi_sir_footnote TEXT,
     cdi_w_z_score REAL,
     cdi_w_z_footnote TEXT,
-    
+
     -- Methicillin-Resistant Staphylococcus Aureus Standardized Infection Ratio
     mrsa_sir REAL,
     mrsa_sir_footnote TEXT,
@@ -58,7 +58,6 @@ CREATE TABLE fy_hac_reduction_program_hospital (
     -- hospital associated infections 
     hai_measures_start_date DATE,
     hai_measures_end_date DATE,
-   
 
     -- Hospital-Acquired Condition Reduction Program
     -- Centers for Medicare & Medicaid Services | CMS (.gov)
@@ -70,4 +69,3 @@ CREATE TABLE fy_hac_reduction_program_hospital (
     payment_reduction REAL,
     payment_reduction_footnote TEXT
 );
-

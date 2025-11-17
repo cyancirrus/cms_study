@@ -2,18 +2,18 @@
 pre-commit:
   parallel: true
   commands:
-    # unit-tests:
-    #   run: |
-    #     ./hooks/testing/unit_test.sh
-    # format-python:
-    #   run: |
-    #     ./hooks/formatters/python.sh
-    #   glob: "*.py"
-    # format-shell:
-    #   run: |
-    #     ./hooks/formatters/shell.sh
-    #   glob: "*.sh"
-    format-sql:
+    unit-tests:
       run: |
-        ./hooks/formatters/sql.sh
-      glob: "**/*.sql"
+        ./hooks/testing/unit_test.sh
+    format-python:
+      run: |
+        ./hooks/formatters/python.sh
+      glob: "*.py"
+    format-shell:
+      run: |
+        ./hooks/formatters/shell.sh
+      glob: "*.sh"
+    # format-sqlite:
+    #   run: |
+    #     ./hooks/formatters/sqlite.sh 
+    #   glob: "etl/*.sql"

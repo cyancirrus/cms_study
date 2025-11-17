@@ -1,4 +1,3 @@
-
 CREATE TABLE hvbp_tps (
     submission_year INT,
     fiscal_year INT,
@@ -13,7 +12,7 @@ CREATE TABLE hvbp_tps (
     -- Clinical Outcomes	Mortality, complications, readmission rates	30-day mortality for heart attack, heart failure, pneumonia	~25%
     unweighted_normalized_clinical_outcomes_domain_score REAL,
     weighted_normalized_clinical_outcomes_domain_score REAL,
-    
+
     -- Person and Community Engagement	Patient experience (HCAHPS survey)	“Would recommend hospital,” nurse communication	~25%
     unweighted_person_and_community_engagement_domain_score REAL,
     weighted_person_and_community_engagement_domain_score REAL,

@@ -18,7 +18,7 @@ CREATE TABLE pch_hcahps_hospital (
     zip_code CHAR(5),
     county_parish TEXT,
     telephone_number TEXT,
-    
+
     -- HCAHPS is the national, standardized survey given to recently discharged patients about their hospital experience, while the patient survey
     -- star rating is a public-facing 5-star rating system that summarizes the results from that HCAHPS survey.
     -- Essentially, HCAHPS is the source data, and the patient survey star rating is a tool to make that data easier for consumers to understand and compare hospitals.

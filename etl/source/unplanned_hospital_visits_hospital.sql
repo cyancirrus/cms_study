@@ -8,7 +8,7 @@ CREATE TABLE unplanned_hospital_visits_hospital (
     zip_code CHAR(5),
     county_parish TEXT,
     telephone_number TEXT,
-    
+
     -- should be measures like readmission infection mortality etc
     measure_id TEXT,
     measure_name TEXT,
@@ -27,4 +27,3 @@ CREATE TABLE unplanned_hospital_visits_hospital (
     start_date DATE,
     end_date DATE
 );
-

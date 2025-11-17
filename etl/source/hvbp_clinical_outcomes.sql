@@ -65,4 +65,3 @@ CREATE TABLE hvbp_clinical_outcomes (
     comp_hip_knee_improvement_points TEXT,
     comp_hip_knee_measure_score TEXT
 );
-

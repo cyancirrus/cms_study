@@ -8,7 +8,7 @@ CREATE TABLE complications_and_deaths_hospital (
     zip_code CHAR(5),
     county_parish TEXT,
     telephone_number TEXT,
-    
+
     -- ssi, mort, complications
     measure_id TEXT,
     measure_name TEXT,

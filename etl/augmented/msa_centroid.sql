@@ -1,5 +1,5 @@
 create table msa_centroid (
-    year INT,
+    -- year INT,
     cbsafp INT,
     -- name -> msa_title
     msa_title TEXT,
@@ -9,4 +9,3 @@ create table msa_centroid (
     latitude REAL,
     longitude REAL
 );
-

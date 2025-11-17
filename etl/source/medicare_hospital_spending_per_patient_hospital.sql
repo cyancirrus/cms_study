@@ -24,4 +24,3 @@ CREATE TABLE medicare_hospital_spending_per_patient_hospital (
     start_date DATE,
     end_date DATE
 );
-

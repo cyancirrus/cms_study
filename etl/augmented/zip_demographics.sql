@@ -1,4 +1,3 @@
-
 create table zip_demographics (
     zip_code INT,
     latitude REAL,

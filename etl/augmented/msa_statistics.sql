@@ -8,9 +8,3 @@ create table msa_statistics (
     -- 2023 -> metric
     metric
 );
-
-
-
-create table foo(id integer);
-insert into foo(id)values(1);
-
