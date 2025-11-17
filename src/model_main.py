@@ -29,7 +29,6 @@ def load_data() -> pd.DataFrame:
             """
             SELECT *
             FROM hvbp_clinical_outcomes
-            WHERE state = "IL";
         """,
             conn,
         )
@@ -44,8 +43,10 @@ def load_readmissions_scaled() -> pd.DataFrame:
             predicted_readmission_rate,
             expected_readmission_rate
         FROM fy_hospital_readmissions_reduction_program_hospital
-        WHERE state = "IL";
-    """
+        WHERE
+            measure_name = "READM-30-AMI-HRRP"
+    ;
+     """
     with sqlite3.connect(DATABASE) as conn:
         df = pd.read_sql_query(query, conn)
 
@@ -110,7 +111,7 @@ def structure_data_multivar_with_readmissions(
 
     # Shift FORWARD to get previous year's data
     df_prev = df_merged.copy()
-    df_prev["fiscal_year"] += 1  # ← CHANGE THIS (was -= 1)
+    df_prev["fiscal_year"] -= 1
 
     prev_cols = dimensions + list(
         df_read.columns.difference(["facility_id", "fiscal_year"])
@@ -135,21 +136,6 @@ def structure_data_multivar_with_readmissions(
     # prev_feature_cols = [c for c in prev_cols if c not in target]
     prev_feature_cols = prev_cols
     feature_cols = [f"{c}_prev" for c in prev_feature_cols]
-    print("Number of features:", len(feature_cols))
-    print("Feature columns:", feature_cols)
-    print("\nTarget columns we're predicting:", target)
-    print("--------------------------------------------------")
-    print("\nChecking for leakage:")
-    print("Columns in df_final:", df_final.columns.tolist())
-    print(
-        "\nAny non-_prev target columns in features?",
-        [
-            c
-            for c in feature_cols
-            if any(t in c for t in target) and "_prev" not in c
-        ],
-    )
-    print("--------------------------------------------------")
     # Prepare arrays
     x = df_final[feature_cols].values
     y = df_final[target].values
@@ -209,7 +195,6 @@ def structure_data_multivar(
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in dimensions}
     )
-
     df_merged = pd.merge(
         df_perf,
         df_prev,
@@ -273,7 +258,7 @@ def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
 
 
 def fit_lasso_regression(
-    x: np.ndarray, y: np.ndarray, alpha: float = 1e-7
+    x: np.ndarray, y: np.ndarray, alpha: float
 ) -> MultiTaskLasso:
     model = MultiTaskLasso(alpha=alpha, max_iter=10_000)
     model.fit(x, y)
@@ -359,12 +344,12 @@ if __name__ == "__main__":
     # x, y = structure_data_multivar(df)
 
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, random_state=69
+        x, y, test_size=0.2, random_state=42
     )
 
     # model = fit_linear_regression(x_train, y_train)
-    model = fit_decision_tree_regression(x_train, y_train)
-    # model = fit_lasso_regression(x_train, y_train)
+    # model = fit_decision_tree_regression(x_train, y_train)
+    model = fit_lasso_regression(x_train, y_train, 1e-6)
 
     print("Metrics on training set:")
     metrics(model, x_train, y_train)
