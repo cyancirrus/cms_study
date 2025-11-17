@@ -3,7 +3,7 @@ import pandas as pd
 from enum import Enum
 from typing import List
 from pyspark.sql import SparkSession
-from src.database.bridge import EngineProtocol, WriteMode
+from database.bridge import EngineProtocol, WriteMode
 
 
 class SparkEngine(EngineProtocol):

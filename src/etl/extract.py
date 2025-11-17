@@ -1,4 +1,4 @@
-from src.database.bridge import EngineProtocol
+from database.bridge import EngineProtocol
 from tables import CmsSchema
 from etl.process import (
     process_table_method,

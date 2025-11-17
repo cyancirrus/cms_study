@@ -30,6 +30,8 @@
 - download onto machine mv to temp directory unzip the files using _dev_filter_.sh ./data/historical/year; // this really should be rewritten and tested prior 
 
 
+-- found a new zipcode https://download.geonames.org/export/zip/ where u do the american one
+
 
 ## fiscal_year
 - October 1 is inclusive, September 30 is inclusive. So a measure dated Sep 30, 2025 still belongs to FY25.
