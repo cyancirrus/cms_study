@@ -8,6 +8,6 @@ create table zip_demographics (
     distance_km REAL,
     cbsa_title TEXT,
     personal_income_k INT,
-    population INT,
+    population_density INT,
     per_capita_income INT
 );
