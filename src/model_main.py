@@ -34,10 +34,11 @@ def load_data() -> pd.DataFrame:
         return pd.read_sql_query(
             """
             SELECT *
-            FROM hvbp_clinical_outcomes
-        """,
+                FROM hvbp_clinical_outcomes
+        ;""",
             conn,
         )
+        # state = "IL"
 
 
 def load_readmissions_scaled() -> pd.DataFrame:
