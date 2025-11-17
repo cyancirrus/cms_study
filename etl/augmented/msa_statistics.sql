@@ -1,4 +1,3 @@
-
 create table msa_statistics (
     -- 2023 was the latest year this will be static data refresh schedule unknown
     year INT,
@@ -9,3 +8,7 @@ create table msa_statistics (
     -- 2023 -> metric
     metric
 );
+
+create table foo(id integer);
+insert into foo(id)values(1);
+
