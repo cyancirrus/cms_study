@@ -216,13 +216,22 @@ def structure_data_multivar_with_readmissions_and_demographics(
             """
             SELECT
                 zip_code,
-                msa_personal_income_k / 1000000 as msa_personal_income_k,
-                msa_population_density / 100000 as msa_population_density,
-                msa_per_capita_income / 100000 as msa_per_capita_income
+                msa_personal_income_k  as msa_personal_income_k,
+                msa_population_density  as msa_population_density,
+                msa_per_capita_income  as msa_per_capita_income
             FROM zip_demographics;
             """,
             conn,
         )
+    for col in [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]:
+        mean = df_zip_demo[col].mean()
+        std = df_zip_demo[col].std()
+        df_zip_demo[col] = (df_zip_demo[col] - mean) / std
+
     # normalize dtypes for join keys
     df["facility_id"] = df["facility_id"]
     df["fiscal_year"] = df["fiscal_year"].astype("int64")
@@ -520,7 +529,7 @@ if __name__ == "__main__":
 
     # model = fit_linear_regression(x_train, y_train)
     # model = fit_decision_tree_regression(x_train, y_train)
-    model = fit_lasso_regression(x_train, y_train, 1e-6)
+    model = fit_lasso_regression(x_train, y_train, 1e-9)
 
     print("Metrics on training set:")
     metrics(model, x_train, y_train)
