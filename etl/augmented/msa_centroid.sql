@@ -1,5 +1,5 @@
 create table msa_centroid (
-    -- year INT,
+    submission_year INT,
     cbsafp INT,
     -- name -> msa_title
     msa_title TEXT,

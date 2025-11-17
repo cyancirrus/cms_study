@@ -54,7 +54,7 @@ def zip_to_msa(
     )
 
     # --- 3. Map linecodes to descriptive feature names ---
-    msa_stats["feature_name"] = msa_stats["linecode"].map(
+    msa_stats["feature_name"] = msa_stats["linecode"].replace(
         LINECODE_FEATURE_MAP
     )
 

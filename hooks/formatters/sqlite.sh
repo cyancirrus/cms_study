@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-
+sqlfluff lint --dialect sqlite etl
 sqlfluff fix --dialect sqlite etl
 
 # sqlformat --reindent --keywords upper -i .

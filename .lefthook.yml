@@ -13,7 +13,7 @@ pre-commit:
       run: |
         ./hooks/formatters/shell.sh
       glob: "*.sh"
-    # format-sqlite:
-    #   run: |
-    #     ./hooks/formatters/sqlite.sh 
-    #   glob: "etl/*.sql"
+    format-sqlite:
+      run: |
+        ./hooks/formatters/sqlite.sh 
+      glob: "etl/*.sql"
