@@ -23,4 +23,4 @@ class CmsSchema(Enum):
     timely_and_effective_care_hospital                 = "timely_and_effective_care_hospital"
     unplanned_hospital_visits_hospital                 = "unplanned_hospital_visits_hospital"
     zip_lat_long                                       = "zip_lat_long"
-    zip_demographics                                        = "zip_demographics"
+    zip_demographics                                   = "zip_demographics"

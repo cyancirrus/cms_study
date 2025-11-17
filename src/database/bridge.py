@@ -4,6 +4,8 @@ from typing import Protocol, Union
 import pandas as pd
 import sqlite3
 
+# NOTE: Enum should eventually be type-aliased to Schema and centralized
+
 
 class WriteMode(Enum):
     overwrite = "overwrite"
@@ -17,7 +19,7 @@ class EngineProtocol(Protocol):
         self,
     ) -> Union[sqlite3.Connection, SparkSession]: ...
 
-    def read(self, table_name:Enum) -> pd.DataFrame: ...
+    def read(self, table_name: Enum) -> pd.DataFrame: ...
     def exec(self, query: str) -> pd.DataFrame: ...
     def write(
         self,

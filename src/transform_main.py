@@ -1,7 +1,7 @@
-import pandas as pd
-import numpy as np
-from sklearn.neighbors import BallTree
-
+from initialize_environment import ENGINE
+from transform.executors import transform_msa_for_demographics
 
 if __name__ == "__main__":
-    print(" i am in the transform")
+    print("Starting transform pipeline")
+    transform_msa_for_demographics(ENGINE)
+    print("Ending transform pipeline")

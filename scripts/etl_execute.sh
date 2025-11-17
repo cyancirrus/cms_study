@@ -66,11 +66,17 @@ import_data() {
 	log "Data has been loaded successfully."
 }
 
+transform_data() {
+	log "Starting ETL transform..."
+	python ./src/transform_main.py || exit_with_error "ETL transform failed"
+}
+
 initialize_environment
 
 remove_database
 create_database
 create_tables
 import_data
+transform_data
 
 log "Database initialization complete."

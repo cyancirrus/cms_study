@@ -37,7 +37,10 @@ class SQLiteEngine(EngineProtocol):
         """
         sqlite_mode = self._map_mode_(mode)
         df.to_sql(
-            table_name.value, self.conn, if_exists=sqlite_mode, index=False
+            table_name.value,
+            self.conn,
+            if_exists=sqlite_mode,
+            index=False,
         )
 
     @staticmethod
