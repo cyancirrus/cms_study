@@ -1,11 +1,9 @@
 import pandas as pd
 import pandas as pd
-from pyspark.sql import SparkSession
 from enum import Enum
+from typing import List
 from pyspark.sql import SparkSession
 from database.bridge import EngineProtocol, WriteMode
-from tables import CmsSchema
-
 
 class SparkEngine(EngineProtocol):
     def __init__(self, database: str):
@@ -41,3 +39,8 @@ class SparkEngine(EngineProtocol):
         """
         spark_df = self.conn.createDataFrame(df)
         spark_df.write.mode(mode.value).saveAsTable(table_name.value)
+    
+    def table_columns(self, table_name: Enum) -> List[str]:
+        df = self.conn.table(table_name.value)
+        return df.columns
+

@@ -2,7 +2,7 @@ import pandas as pd
 import pandas as pd
 import sqlite3
 from enum import Enum
-from typing import Literal
+from typing import List, Literal
 from database.bridge import EngineProtocol, WriteMode
 
 
@@ -42,6 +42,11 @@ class SQLiteEngine(EngineProtocol):
             if_exists=sqlite_mode,
             index=False,
         )
+    def table_columns(self, table_name:Enum) -> List[str]:
+        query = f"""
+            PRAGMA table_info({table_name.value});
+        """
+        return pd.read_sql( query, self.conn)["name"].tolist()
 
     @staticmethod
     def _map_mode_(

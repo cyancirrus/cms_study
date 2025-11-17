@@ -14,12 +14,19 @@ LINECODE_FEATURE_MAP: Final[Dict[int, str]] = {
 }
 
 
-def zip_to_msa(zip_lat_long:pd.DataFrame, msa_dim:pd.DataFrame, msa_centroids:pd.DataFrame, msa_stats:pd.DataFrame):
+def zip_to_msa(
+    zip_lat_long: pd.DataFrame,
+    msa_dim: pd.DataFrame,
+    msa_centroids: pd.DataFrame,
+    msa_stats: pd.DataFrame,
+):
     """
     Map ZIPs to nearest MSA, attach MSA dim and stats, output wide format ready for modeling.
     """
     # --- 1. Map ZIP to nearest MSA ---
-    zip_coords = np.radians(zip_lat_long[["latitude", "longitude"]].values)
+    zip_coords = np.radians(
+        zip_lat_long[["latitude", "longitude"]].values
+    )
     msa_coords = np.radians(
         msa_centroids[["latitude", "longitude"]].values
     )
@@ -33,12 +40,11 @@ def zip_to_msa(zip_lat_long:pd.DataFrame, msa_dim:pd.DataFrame, msa_centroids:pd
     zip_lat_long["msa_title"] = msa_centroids.iloc[idx.flatten()][
         "msa_title"
     ].values
-    zip_lat_long["state_abbreviation"] = msa_centroids.iloc[idx.flatten()][
-        "state_abbreviation"
-    ].values
+    zip_lat_long["state_abbreviation"] = msa_centroids.iloc[
+        idx.flatten()
+    ]["state_abbreviation"].values
     # Radians -> Killometers
     zip_lat_long["distance_km"] = dist.flatten() * 6371
-
 
     # --- 2. Merge MSA dim ---
     zip_lat_long = zip_lat_long.merge(

@@ -1,6 +1,7 @@
 import pandas as pd
-import sqlite3
-from typing import Callable
+from enum import Enum
+from typing import Callable, List
+from database.bridge import EngineProtocol, WriteMode
 from etl.loaders import (
     load_and_clean_csv,
     load_and_enrich_region_csv,
@@ -9,54 +10,54 @@ from etl.loaders import (
 
 
 def insert_into_existing_table(
-    df: pd.DataFrame, db_path: str, table_name: str
+    engine:EngineProtocol,
+    df: pd.DataFrame,
+    table_name: Enum
 ):
     # Insert the expected schema ie the intersection of CSV cols and table cols
-    with sqlite3.connect(db_path) as conn:
-        existing_cols = pd.read_sql(
-            f"PRAGMA table_info({table_name});", conn
-        )["name"].tolist()
-        available_cols = [c for c in df.columns if c in existing_cols]
-        df[available_cols].to_sql(
-            table_name,
-            conn,
-            if_exists="append",
-            index=False,
-        )
-
+    available_cols:List[str] = [c for c in df.columns if c in engine.table_columns(table_name)]
+    df = df.loc[:, available_cols]
+    assert isinstance(df, pd.DataFrame);
+    engine.write(df, table_name, WriteMode.append);
 
 def process_table_method(
     func: Callable,
-    database: str,
+    engine:EngineProtocol,
     data_path: str,
-    table_name: str,
+    table_name: Enum,
     year: int,
 ):
     print(f"loading table: {table_name}")
     df = func(data_path, year)
-    insert_into_existing_table(df, database, table_name)
+    insert_into_existing_table(engine, df, table_name)
 
-
-def process_table(database: str, data_path: str, table_name: str):
+def process_table(
+    engine:EngineProtocol,
+    data_path: str,
+    table_name: Enum
+):
     print(f"loading table: {table_name}")
     df = load_and_clean_csv(data_path)
-    insert_into_existing_table(df, database, table_name)
+    insert_into_existing_table(engine, df, table_name)
 
 
 def process_table_region(
-    database: str, data_path: str, table_name: str
+    engine: EngineProtocol,
+    data_path: str,
+    table_name: Enum,
+    year: int
 ):
     print(f"loading table: {table_name}")
-    df = load_and_enrich_region_csv(data_path)
-    insert_into_existing_table(df, database, table_name)
+    df = load_and_enrich_region_csv(data_path, year)
+    insert_into_existing_table(engine, df, table_name)
 
 
 def process_table_append_year(
-    database: str,
+    engine: EngineProtocol,
     data_path: str,
-    table_name: str,
-    year: int,
+    table_name: Enum,
+    year: int
 ):
     print(f"loading table: {table_name}")
     df = load_and_clean_and_append_year_csv(data_path, year)
-    insert_into_existing_table(df, database, table_name)
+    insert_into_existing_table(engine, df, table_name)

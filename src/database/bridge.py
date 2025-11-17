@@ -1,6 +1,6 @@
 from enum import Enum
 from pyspark.sql import SparkSession
-from typing import Protocol, Union
+from typing import List, Protocol, Union
 import pandas as pd
 import sqlite3
 
@@ -27,3 +27,4 @@ class EngineProtocol(Protocol):
         table_name: Enum,
         mode: WriteMode = WriteMode.overwrite,
     ) -> None: ...
+    def table_columns(self, table_name:Enum) -> List[str]:...
