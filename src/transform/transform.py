@@ -1,12 +1,17 @@
 from transform.process import zip_to_msa
 from database.bridge import EngineProtocol
-
-def extract_all_years_cms(database: str):
-    # Historical data is only consistent back to 2021
-    extract_cms_data(database, "./data/source/", 2025)
-    extract_cms_data(database, "./data/historical/2024", 2024)
-    extract_cms_data(database, "./data/historical/2023", 2023)
-    extract_cms_data(database, "./data/historical/2022", 2022)
-    extract_cms_data(database, "./data/historical/2021", 2021)
+from tables import CmsSchema
 
 
+def transform_msa_for_demographics(engine:EngineProtocol):
+    df_zip_lat_long= engine.read(CmsSchema.zip_lat_long);
+    df_msa_dim = engine.read(CmsSchema.zip_lat_long);
+    df_msa_centroids = engine.read(CmsSchema.msa_centoid);
+    df_msa_stats = engine.read(CmsSchema.msa_statistics)
+    result = zip_to_msa(
+        df_zip_lat_long,
+        df_msa_dim ,
+        df_msa_centroids ,
+        df_msa_stats ,
+    )
+    engine.write(result, CmsSchema.zip_demographics)

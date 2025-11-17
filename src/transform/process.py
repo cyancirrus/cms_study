@@ -20,13 +20,19 @@ def zip_to_msa(zip_df, msa_centroids_df, msa_dim_df, msa_stats_df):
     """
     # --- 1. Map ZIP to nearest MSA ---
     zip_coords = np.radians(zip_df[["latitude", "longitude"]].values)
-    msa_coords = np.radians(msa_centroids_df[["latitude", "longitude"]].values)
+    msa_coords = np.radians(
+        msa_centroids_df[["latitude", "longitude"]].values
+    )
 
     tree = BallTree(msa_coords, metric="haversine")
     dist, idx = tree.query(zip_coords, k=1)
 
-    zip_df["cbsafp"] = msa_centroids_df.iloc[idx.flatten()]["cbsafp"].values
-    zip_df["msa_title"] = msa_centroids_df.iloc[idx.flatten()]["msa_title"].values
+    zip_df["cbsafp"] = msa_centroids_df.iloc[idx.flatten()][
+        "cbsafp"
+    ].values
+    zip_df["msa_title"] = msa_centroids_df.iloc[idx.flatten()][
+        "msa_title"
+    ].values
     zip_df["state_abbreviation"] = msa_centroids_df.iloc[idx.flatten()][
         "state_abbreviation"
     ].values
@@ -40,7 +46,9 @@ def zip_to_msa(zip_df, msa_centroids_df, msa_dim_df, msa_stats_df):
     )
 
     # --- 3. Map linecodes to descriptive feature names ---
-    msa_stats_df["feature_name"] = msa_stats_df["linecode"].map(LINECODE_FEATURE_MAP)
+    msa_stats_df["feature_name"] = msa_stats_df["linecode"].map(
+        LINECODE_FEATURE_MAP
+    )
 
     # --- 4. Pivot stats to wide ---
     stats_wide = msa_stats_df.pivot_table(

@@ -18,7 +18,9 @@ def retrieve_recommended_hospital(
         ...,
         description="5-digit ZIP code of patient location",
     ),
-    hospital_type: HospitalType = Query(..., description="Type of hospital"),
+    hospital_type: HospitalType = Query(
+        ..., description="Type of hospital"
+    ),
     service_category: ServiceCategory = Query(
         ..., description="Type of service needed"
     ),

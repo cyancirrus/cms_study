@@ -28,7 +28,9 @@ def _get_spark():
     if _SPARK is None:
         from pyspark.sql import SparkSession
 
-        _SPARK = SparkSession.builder.appName("healthy_sphinx").getOrCreate()
+        _SPARK = SparkSession.builder.appName(
+            "healthy_sphinx"
+        ).getOrCreate()
     return _SPARK
 
 
