@@ -1,3 +1,4 @@
+
 CREATE TABLE hcahps_hospital (
     submission_year INT,
     -- HCAHPS := Hospital Consumer Assessment of Healthcare Providers and Systems

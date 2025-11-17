@@ -3,4 +3,4 @@ dialect = sqlite
 templater = jinja
 
 [sqlfluff:rules:layout.long_lines]
-asdklfjasdfignore_comment_lines = True
+ignore_comment_lines = True
