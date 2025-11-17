@@ -15,9 +15,7 @@ class SQLitePool:
     def __init__(self, db_path: str, max_size: int = 1):
         self._pool = Queue(maxsize=max_size)
         for _ in range(max_size):
-            conn = sqlite3.connect(
-                db_path, check_same_thread=False
-            )
+            conn = sqlite3.connect(db_path, check_same_thread=False)
             self._pool.put(conn)
 
     def acquire(self):

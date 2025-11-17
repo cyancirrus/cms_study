@@ -67,9 +67,7 @@ class EngineProtocol(Protocol):
 
 class SQLiteEngine:
     def __init__(self, db_path: str):
-        self.conn = sqlite3.connect(
-            db_path, check_same_thread=False
-        )
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
 
     def get_connection(self):
         return self.conn
@@ -83,8 +81,6 @@ class SQLiteEngine:
         return df
 
 
-def query_bridge(
-    engine: EngineProtocol, query: str
-) -> pd.DataFrame:
+def query_bridge(engine: EngineProtocol, query: str) -> pd.DataFrame:
     conn = engine.get_connection()  # could be reused / pooled
     return engine.run_query(query)

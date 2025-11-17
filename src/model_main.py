@@ -224,9 +224,7 @@ def structure_data_multivar(
     df_final = df_merged.dropna(subset=cols_to_check)
 
     # Features: exclude previous-year targets to avoid leakage
-    feature_cols = [
-        f"{c}_prev" for c in prev_cols if c not in target
-    ]
+    feature_cols = [f"{c}_prev" for c in prev_cols if c not in target]
 
     x = df_final[feature_cols].values
     y = df_final[target].values
@@ -242,9 +240,7 @@ def structure_data_ar(
     performance_cols = [
         c for c in df.columns if "performance_rate" in c
     ]
-    df_perf = df[
-        ["facility_id", "fiscal_year"] + performance_cols
-    ]
+    df_perf = df[["facility_id", "fiscal_year"] + performance_cols]
 
     df_prev = df_perf.copy()
     df_prev["fiscal_year"] += 1

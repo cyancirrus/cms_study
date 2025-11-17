@@ -28,9 +28,7 @@ def report_hvbp_tps(database: str, year: int):
         "weighted_efficiency_and_cost_reduction_domain_score",
         "total_performance_score",
     ]
-    draw_summary(
-        database, year, output_file, "hvbp_tps", measures
-    )
+    draw_summary(database, year, output_file, "hvbp_tps", measures)
 
 
 def report_fy_hospital_readmissions_reduction_program_hospital(
@@ -58,9 +56,7 @@ def report_fy_hospital_readmissions_reduction_program_hospital(
 
 
 def report_hospital_general_information(database: str, year: int):
-    output_file: str = (
-        "./visualizations/hospital_general_information"
-    )
+    output_file: str = "./visualizations/hospital_general_information"
     measures: list[str] = [
         # # -- mortality
         "mort_group_measure_count",
@@ -101,9 +97,7 @@ def report_hospital_general_information(database: str, year: int):
     )
 
 
-def report_fy_hac_reduction_program_hospital(
-    database: str, year: int
-):
+def report_fy_hac_reduction_program_hospital(database: str, year: int):
     output_file: str = (
         "./visualizations/fy_hac_reduction_program_hospital"
     )
@@ -172,9 +166,7 @@ def report_filter_complications_and_deaths_hospital(
     )
 
 
-def report_zeroized_general_hospital_by_state(
-    database: str, year: int
-):
+def report_zeroized_general_hospital_by_state(database: str, year: int):
     output_file: str = (
         "./visualizations/zeroized_hospital_general_information_state"
     )
@@ -210,9 +202,7 @@ def report_zeroized_general_hospital_by_state(
     )
 
 
-def report_zeroized_general_hospital_by_type(
-    database: str, year: int
-):
+def report_zeroized_general_hospital_by_type(database: str, year: int):
     output_file: str = (
         "./visualizations/zeroized_hospital_general_information_type"
     )

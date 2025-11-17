@@ -16,9 +16,7 @@ def insert_into_existing_table(
         existing_cols = pd.read_sql(
             f"PRAGMA table_info({table_name});", conn
         )["name"].tolist()
-        available_cols = [
-            c for c in df.columns if c in existing_cols
-        ]
+        available_cols = [c for c in df.columns if c in existing_cols]
         df[available_cols].to_sql(
             table_name,
             conn,

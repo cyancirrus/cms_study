@@ -99,9 +99,7 @@ def draw_zeroized_state_summary(
         df = zeroized_score_by_group(
             database, table, l, b, w, t, "state"
         )
-        hist_data = histogram_summary(
-            df, f"{l}_zeroized_score", bins
-        )
+        hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
         if hist_data is None:
             continue
         ax.hist(
@@ -139,9 +137,7 @@ def draw_zeroized_facility_summary(
         df = zeroized_score_by_group(
             database, table, l, b, w, t, "facility_id"
         )
-        hist_data = histogram_summary(
-            df, f"{l}_zeroized_score", bins
-        )
+        hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
         if hist_data is None:
             continue
         ax.hist(
@@ -179,9 +175,7 @@ def draw_zeroized_type_summary(
         df = zeroized_score_by_group(
             database, table, l, b, w, t, "hospital_type"
         )
-        hist_data = histogram_summary(
-            df, f"{l}_zeroized_score", bins
-        )
+        hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
         if hist_data is None:
             continue
         ax.hist(

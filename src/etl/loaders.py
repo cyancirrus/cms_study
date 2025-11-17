@@ -31,9 +31,7 @@ def load_and_clean_csv(path: str) -> pd.DataFrame:
     return df
 
 
-def load_and_enrich_region_csv(
-    path: str, year: int
-) -> pd.DataFrame:
+def load_and_enrich_region_csv(path: str, year: int) -> pd.DataFrame:
     # Areas like midwest atlantic data isfrom 2017 but shoudld be stable
     df = pd.read_csv(
         path,
@@ -84,9 +82,7 @@ def load_and_clean_and_append_year_csv(
     return df
 
 
-def load_and_map_msa_statistics(
-    path: str, year: int
-) -> pd.DataFrame:
+def load_and_map_msa_statistics(path: str, year: int) -> pd.DataFrame:
     # 2023 unsure of the data refresh schedule
     df = pd.read_csv(
         path,
@@ -157,9 +153,7 @@ def load_and_map_msa_dim(path: str, year: int) -> pd.DataFrame:
     return df
 
 
-def load_and_map_msa_centroids(
-    path: str, year: int
-) -> pd.DataFrame:
+def load_and_map_msa_centroids(path: str, year: int) -> pd.DataFrame:
     # 2025 as most recently updated
     df = pd.read_csv(
         path,
@@ -172,7 +166,6 @@ def load_and_map_msa_centroids(
             "",
         ],
     )
-
 
     df.columns = [clean_column_name(c) for c in df.columns]
     df = df.rename(
