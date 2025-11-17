@@ -14,7 +14,7 @@ LINECODE_FEATURE_MAP: Final[Dict[str, str]] = {
 }
 
 
-# TODO: Ai generated script, did some things to test like basic data but need to review and add asserts
+# TODO: AI-generated, needs review and asserts
 def zip_to_msa(
     zip_lat_long: pd.DataFrame,
     msa_dim: pd.DataFrame,
@@ -24,10 +24,22 @@ def zip_to_msa(
     """
     Map ZIPs to nearest MSA, attach MSA dim and stats, output wide format ready for modeling.
     """
+
     # --- 1a. Filter centroids to MSAs that have stats ---
     msa_with_stats = msa_stats["cbsafp"].dropna().unique()
+    msa_with_stats = np.array(
+        msa_with_stats, dtype=int
+    )  # force integer
+
+    print(
+        f"msa_with_stats type: {type(msa_with_stats)}, dtype: {msa_with_stats.dtype}"
+    )
+    assert isinstance(msa_with_stats, np.ndarray)
+    assert np.issubdtype(msa_with_stats.dtype, np.integer)
+
+    # Filter centroids safely
     msa_centroids_filtered = msa_centroids[
-        msa_centroids["cbsafp"].isin(msa_with_stats)
+        msa_centroids["cbsafp"].isin(msa_with_stats.tolist())
     ]
 
     # --- 1b. Map ZIP to nearest MSA using filtered centroids ---
@@ -35,7 +47,7 @@ def zip_to_msa(
         zip_lat_long[["latitude", "longitude"]].values
     )
     msa_coords = np.radians(
-        msa_centroids_filtered[["latitude", "longitude"]].values
+        msa_centroids_filtered[["latitude", "longitude"]]
     )
 
     tree = BallTree(msa_coords, metric="haversine")
@@ -71,10 +83,5 @@ def zip_to_msa(
 
     # --- 5. Merge wide stats into ZIPs ---
     zip_wide = zip_lat_long.merge(stats_wide, on="cbsafp", how="left")
-    print("ZIP COLUMNS")
-    print(zip_wide.columns)
     zip_wide = zip_wide.rename(columns=LINECODE_FEATURE_MAP)
-    print("ZIP COLUMNS NEW")
-    print(zip_wide.columns)
-
     return zip_wide
