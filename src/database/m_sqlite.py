@@ -42,11 +42,12 @@ class SQLiteEngine(EngineProtocol):
             if_exists=sqlite_mode,
             index=False,
         )
-    def table_columns(self, table_name:Enum) -> List[str]:
+
+    def table_columns(self, table_name: Enum) -> List[str]:
         query = f"""
             PRAGMA table_info({table_name.value});
         """
-        return pd.read_sql( query, self.conn)["name"].tolist()
+        return pd.read_sql(query, self.conn)["name"].tolist()
 
     @staticmethod
     def _map_mode_(

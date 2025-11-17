@@ -13,7 +13,7 @@ from etl.loaders import (
 )
 
 
-def extract_cms_data(engine:EngineProtocol, directory: str, year: int):
+def extract_cms_data(engine: EngineProtocol, directory: str, year: int):
     print("----------------------------------------")
     print(f"        Loading year {year}            ")
     print("----------------------------------------")
@@ -116,7 +116,7 @@ def extract_cms_data(engine:EngineProtocol, directory: str, year: int):
     print()
 
 
-def extract_augmented_tables(engine:EngineProtocol):
+def extract_augmented_tables(engine: EngineProtocol):
     # TODO: Set up definitions for msa want to check if like we can get historical data in
     process_table_method(
         load_and_enrich_region_csv,
@@ -162,7 +162,7 @@ def extract_augmented_tables(engine:EngineProtocol):
     )
 
 
-def extract_all_years_cms(engine:EngineProtocol):
+def extract_all_years_cms(engine: EngineProtocol):
     # Historical data is only consistent back to 2021
     extract_cms_data(engine, "./data/source/", 2025)
     extract_cms_data(engine, "./data/historical/2024", 2024)

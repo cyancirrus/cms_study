@@ -10,19 +10,20 @@ from etl.loaders import (
 
 
 def insert_into_existing_table(
-    engine:EngineProtocol,
-    df: pd.DataFrame,
-    table_name: Enum
+    engine: EngineProtocol, df: pd.DataFrame, table_name: Enum
 ):
     # Insert the expected schema ie the intersection of CSV cols and table cols
-    available_cols:List[str] = [c for c in df.columns if c in engine.table_columns(table_name)]
+    available_cols: List[str] = [
+        c for c in df.columns if c in engine.table_columns(table_name)
+    ]
     df = df.loc[:, available_cols]
-    assert isinstance(df, pd.DataFrame);
-    engine.write(df, table_name, WriteMode.append);
+    assert isinstance(df, pd.DataFrame)
+    engine.write(df, table_name, WriteMode.append)
+
 
 def process_table_method(
     func: Callable,
-    engine:EngineProtocol,
+    engine: EngineProtocol,
     data_path: str,
     table_name: Enum,
     year: int,
@@ -31,10 +32,9 @@ def process_table_method(
     df = func(data_path, year)
     insert_into_existing_table(engine, df, table_name)
 
+
 def process_table(
-    engine:EngineProtocol,
-    data_path: str,
-    table_name: Enum
+    engine: EngineProtocol, data_path: str, table_name: Enum
 ):
     print(f"loading table: {table_name}")
     df = load_and_clean_csv(data_path)
@@ -42,10 +42,7 @@ def process_table(
 
 
 def process_table_region(
-    engine: EngineProtocol,
-    data_path: str,
-    table_name: Enum,
-    year: int
+    engine: EngineProtocol, data_path: str, table_name: Enum, year: int
 ):
     print(f"loading table: {table_name}")
     df = load_and_enrich_region_csv(data_path, year)
@@ -53,10 +50,7 @@ def process_table_region(
 
 
 def process_table_append_year(
-    engine: EngineProtocol,
-    data_path: str,
-    table_name: Enum,
-    year: int
+    engine: EngineProtocol, data_path: str, table_name: Enum, year: int
 ):
     print(f"loading table: {table_name}")
     df = load_and_clean_and_append_year_csv(data_path, year)

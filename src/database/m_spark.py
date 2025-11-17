@@ -5,6 +5,7 @@ from typing import List
 from pyspark.sql import SparkSession
 from database.bridge import EngineProtocol, WriteMode
 
+
 class SparkEngine(EngineProtocol):
     def __init__(self, database: str):
         self.conn = SparkSession.builder.appName(
@@ -39,8 +40,7 @@ class SparkEngine(EngineProtocol):
         """
         spark_df = self.conn.createDataFrame(df)
         spark_df.write.mode(mode.value).saveAsTable(table_name.value)
-    
+
     def table_columns(self, table_name: Enum) -> List[str]:
         df = self.conn.table(table_name.value)
         return df.columns
-

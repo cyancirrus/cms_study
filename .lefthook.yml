@@ -1,25 +1,32 @@
+# TODO: port these to scripts and add unit tests
 pre-commit:
-  # parallel: true  # optional
+  parallel: true
   commands:
-    unit-tests:
-      run: |
-        PYTHONPATH=./ pytest ./tests
     format-python:
       run: |
-        black --line-length 72 .
+        ./hooks/formatters/python.sh
       glob: "*.py"
     format-shell:
       run: |
-        shfmt -w ./scripts
+        ./hooks/formatters/shell.sh
       glob: "*.sh"
+    format-sql:
+      run: |
+        ./hooks/formatters/sql.sh
+      glob: "*.sql"
 
-# TODO: port these to scripts and add unit tests
 # pre-commit:
-#   parallel: true
-  # scripts:
-  #   format-python:
-  #     run: black .
-  #     glob: "*.py"
-  #   format-shell:
-  #     run: shfmt -w ./scripts
-  #     glob: "*.sh"
+#   # parallel: true  # optional
+#   commands:
+#     unit-tests:
+#       run: |
+#         PYTHONPATH=./ pytest ./tests
+#     format-python:
+#       run: |
+#         black --line-length 72 .
+#       glob: "*.py"
+#     format-shell:
+#       run: |
+#         shfmt -w ./scripts
+#       glob: "*.sh"
+

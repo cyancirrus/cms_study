@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 
+
 def clean_column_name(col: str) -> str:
     col = col.strip().lower()
     col = re.sub(r"[^a-z0-9]+", "_", col)
