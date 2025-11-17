@@ -5,5 +5,5 @@ from etl.extract import (
 )
 
 if __name__ == "__main__":
-    extract_all_years_cms(DATABASE)
+    # extract_all_years_cms(DATABASE)
     extract_augmented_tables(DATABASE)

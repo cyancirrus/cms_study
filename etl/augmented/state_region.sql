@@ -1,4 +1,5 @@
 CREATE TABLE state_region (
+    year INT,
     state_name TEXT,
     state_abbreviation TEXT,
     fips_state_code INT,
