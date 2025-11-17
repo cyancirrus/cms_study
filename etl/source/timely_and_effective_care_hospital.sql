@@ -1,6 +1,6 @@
 CREATE TABLE timely_and_effective_care_hospital (
     submission_year INT,
-    facility_id INT,
+    facility_id TEXT,
     facility_name TEXT,
     address TEXT,
     city_town TEXT,

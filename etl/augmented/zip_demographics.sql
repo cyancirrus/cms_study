@@ -1,5 +1,5 @@
 create table zip_demographics (
-    zip_code INT,
+    zip_code TEXT,
     latitude REAL,
     longitude REAL,
     cbsafp INT,

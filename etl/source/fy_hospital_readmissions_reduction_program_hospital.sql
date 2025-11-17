@@ -2,7 +2,7 @@ CREATE TABLE fy_hospital_readmissions_reduction_program_hospital (
     -- readmissions
     submission_year INT,
     facility_name TEXT,
-    facility_id INT,
+    facility_id TEXT,
     state CHAR(2),
 
     measure_name TEXT,

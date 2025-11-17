@@ -1,7 +1,7 @@
 CREATE TABLE hvbp_clinical_outcomes (
     submission_year INT,
     fiscal_year INT,
-    facility_id INT,
+    facility_id TEXT,
     facility_name TEXT,
     address TEXT,
     city_town TEXT,

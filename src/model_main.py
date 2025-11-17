@@ -152,6 +152,165 @@ def structure_data_multivar_with_readmissions(
     return x, delta_y
 
 
+def structure_data_multivar_with_readmissions_and_demographics(
+    df: pd.DataFrame, df_read: pd.DataFrame, db_path: str = DATABASE
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Prepare feature matrix X and target delta_y without leakage,
+    including facility-level zip demographics.
+    """
+    granularity = ["fiscal_year", "facility_id"]
+
+    # All columns to consider as features (same as your original)
+    dimensions = [
+        # New metrics
+        "mort_30_ami_achievement_threshold",
+        "mort_30_ami_benchmark",
+        "mort_30_hf_achievement_threshold",
+        "mort_30_hf_benchmark",
+        "mort_30_pn_achievement_threshold",
+        "mort_30_pn_benchmark",
+        "mort_30_copd_achievement_threshold",
+        "mort_30_copd_benchmark",
+        "mort_30_cabg_achievement_threshold",
+        "mort_30_cabg_benchmark",
+        "comp_hip_knee_achievement_threshold",
+        "comp_hip_knee_benchmark",
+        # Prior metrics
+        "mort_30_ami_baseline_rate",
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_baseline_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_baseline_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_baseline_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_baseline_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_baseline_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    target = [
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    # --- load facility_zip_code + zip_demographics ---
+    with sqlite3.connect(db_path) as conn:
+        df_fac_zip = pd.read_sql_query(
+            """
+            SELECT
+                submission_year AS fiscal_year,
+                facility_id,
+                zip_code
+            FROM facility_zip_code;
+            """,
+            conn,
+        )
+        df_zip_demo = pd.read_sql_query(
+            """
+            SELECT
+                zip_code,
+                msa_personal_income_k / 1000000 as msa_personal_income_k,
+                msa_population_density / 100000 as msa_population_density,
+                msa_per_capita_income / 100000 as msa_per_capita_income
+            FROM zip_demographics;
+            """,
+            conn,
+        )
+    # normalize dtypes for join keys
+    df["facility_id"] = df["facility_id"]
+    df["fiscal_year"] = df["fiscal_year"].astype("int64")
+
+    df_read["facility_id"] = df_read["facility_id"]
+    df_read["fiscal_year"] = df_read["fiscal_year"].astype("int64")
+
+    df_fac_zip["facility_id"] = df_fac_zip["facility_id"]
+    df_fac_zip["fiscal_year"] = df_fac_zip["fiscal_year"].astype(
+        "int64"
+    )
+    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
+
+    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
+
+    # facility-year -> zip-year -> demographics
+    df_zip = pd.merge(
+        df_fac_zip, df_zip_demo, on="zip_code", how="left"
+    )
+
+    # --- Merge with readmissions data (same as original) ---
+    df_merged = pd.merge(
+        df,
+        df_read,
+        on=["facility_id", "fiscal_year"],
+        how="left",
+    )
+
+    # --- Add current-year demographics (these will get shifted to prev) ---
+    df_merged = pd.merge(
+        df_merged,
+        df_zip[
+            [
+                "facility_id",
+                "fiscal_year",
+                "msa_personal_income_k",
+                "msa_population_density",
+                "msa_per_capita_income",
+            ]
+        ],
+        on=["facility_id", "fiscal_year"],
+        how="left",
+    )
+
+    # Shift FORWARD to get previous year's data
+    df_prev = df_merged.copy()
+    df_prev["fiscal_year"] -= 1
+
+    # prev_cols = clinical dims + readmission cols + demo cols
+    prev_cols = (
+        dimensions
+        + list(
+            df_read.columns.difference(["facility_id", "fiscal_year"])
+        )
+        + [
+            "msa_personal_income_k",
+            "msa_population_density",
+            "msa_per_capita_income",
+        ]
+    )
+
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in prev_cols}
+    )
+
+    # Now current year row gets actual previous year's features
+    df_final = pd.merge(
+        df_merged,
+        df_prev,
+        on=["facility_id", "fiscal_year"],
+        how="inner",
+    )
+
+    # Drop rows with NaNs in any required columns
+    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
+    df_final = df_final.dropna(subset=cols_to_check)
+
+    # Features: all previous-year cols (clinical + readm + demos)
+    prev_feature_cols = prev_cols
+    feature_cols = [f"{c}_prev" for c in prev_feature_cols]
+
+    x = df_final[feature_cols].values
+    y = df_final[target].values
+    delta_y = y - df_final[[f"{c}_prev" for c in target]].values
+
+    return x, delta_y
+
+
 def structure_data_multivar(
     df: pd.DataFrame,
 ) -> Tuple[np.ndarray, np.ndarray]:
@@ -349,8 +508,10 @@ def plot_delta_scatter(
 if __name__ == "__main__":
     df = load_data()
     df_read = load_readmissions_scaled()
-
-    x, y = structure_data_multivar_with_readmissions(df, df_read)
+    # x, y = structure_data_multivar_with_readmissions(df, df_read)
+    x, y = structure_data_multivar_with_readmissions_and_demographics(
+        df, df_read
+    )
     # x, y = structure_data_multivar(df)
 
     x_train, x_test, y_train, y_test = train_test_split(

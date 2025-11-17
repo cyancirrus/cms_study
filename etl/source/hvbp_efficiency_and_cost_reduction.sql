@@ -2,7 +2,7 @@ CREATE TABLE hvbp_efficiency_and_cost_reduction (
     submission_year INT,
     -- mspb : medicare spending per beneficiary
     fiscal_year INT,
-    facility_id INT,
+    facility_id TEXT,
     facility_name TEXT,
     address TEXT,
     city_town TEXT,

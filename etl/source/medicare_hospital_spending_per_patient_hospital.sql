@@ -6,7 +6,7 @@
 CREATE TABLE medicare_hospital_spending_per_patient_hospital (
     -- only contains Medicare hospital spending per patient (Medicare Spending per Beneficiary)
     submission_year INT,
-    facility_id INT,
+    facility_id TEXT,
     facility_name TEXT,
     address TEXT,
     city_town TEXT,

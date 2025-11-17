@@ -10,7 +10,7 @@
 
 CREATE TABLE pch_hcahps_hospital (
     submission_year INT,
-    facility_id INT,
+    facility_id TEXT,
     facility_name TEXT,
     address TEXT,
     city_town TEXT,

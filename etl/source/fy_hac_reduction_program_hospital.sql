@@ -7,7 +7,7 @@ CREATE TABLE fy_hac_reduction_program_hospital (
     -- w-zscore := Weighted Z Score ~ (observed - expected)/standard_error;
 
     facility_name TEXT,
-    facility_id INT,
+    facility_id TEXT,
     state CHAR(2),
     fiscal_year INT,
 

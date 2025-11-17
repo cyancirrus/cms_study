@@ -2,7 +2,7 @@ CREATE TABLE ipfqr_quality_measures_facility (
     submission_year INT,
     -- IPFQR := Inpatient Psychiatric Facility Quality Reporting Program
 
-    facility_id INT,
+    facility_id TEXT,
     facility_name TEXT,
     address TEXT,
     city_town TEXT,
