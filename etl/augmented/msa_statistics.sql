@@ -9,6 +9,7 @@ create table msa_statistics (
     metric
 );
 
+
 create table foo(id integer);
 insert into foo(id)values(1);
 
