@@ -1,5 +1,5 @@
 from transform.process import zip_to_msa
-from database.bridge import EngineProtocol
+from src.database.bridge import EngineProtocol
 from tables import CmsSchema
 
 

@@ -1,6 +1,6 @@
-from database.bridge import EngineProtocol
-from database.m_spark import SparkEngine
-from database.m_sqlite import SQLiteEngine
+from src.database.bridge import EngineProtocol
+from src.database.m_spark import SparkEngine
+from src.database.m_sqlite import SQLiteEngine
 
 
 def retrieve_engine(backend: str, database: str) -> EngineProtocol:

@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from typing import Final
-from database.bridge import EngineProtocol
-from database.unify import retrieve_engine
+from src.database.bridge import EngineProtocol
+from src.database.unify import retrieve_engine
 import os
 
 load_dotenv()
