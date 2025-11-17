@@ -16,4 +16,4 @@ pre-commit:
     format-sql:
       run: |
         ./hooks/formatters/sql.sh
-      glob: "*.sql"
+      glob: "**/*.sql"

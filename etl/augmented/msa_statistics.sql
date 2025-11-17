@@ -10,6 +10,7 @@ create table msa_statistics (
 );
 
 
+
 create table foo(id integer);
 insert into foo(id)values(1);
 
