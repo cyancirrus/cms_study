@@ -14,7 +14,9 @@ SQLITE_PATH = os.getenv("SQLITE_PATH", "source.db")
 def _sqlite_query(sql: str, params=None) -> pd.DataFrame:
     conn = sqlite3.connect(SQLITE_PATH)
     try:
-        return pd.read_sql_query(sql, conn, params=params or {})
+        return pd.read_sql_query(
+            sql, conn, params=params or {}
+        )
     finally:
         conn.close()
 
@@ -28,7 +30,9 @@ def _get_spark():
     if _SPARK is None:
         from pyspark.sql import SparkSession
 
-        _SPARK = SparkSession.builder.appName("healthy_sphinx").getOrCreate()
+        _SPARK = SparkSession.builder.appName(
+            "healthy_sphinx"
+        ).getOrCreate()
     return _SPARK
 
 
@@ -56,14 +60,18 @@ def query(sql: str, params=None) -> pd.DataFrame:
 
 
 class EngineProtocol(Protocol):
-    def get_connection(self) -> Union[sqlite3.Connection, SparkSession]: ...
+    def get_connection(
+        self,
+    ) -> Union[sqlite3.Connection, SparkSession]: ...
 
     def run_query(self, query: str) -> pd.DataFrame: ...
 
 
 class SQLiteEngine:
     def __init__(self, db_path: str):
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.conn = sqlite3.connect(
+            db_path, check_same_thread=False
+        )
 
     def get_connection(self):
         return self.conn
@@ -71,12 +79,18 @@ class SQLiteEngine:
     def run_query(self, query: str) -> pd.DataFrame:
         cursor = self.conn.execute(query)
         rows = cursor.fetchall()
-        columns = [str(desc[0]) for desc in cursor.description]
+        columns = [
+            str(desc[0]) for desc in cursor.description
+        ]
         df = pd.DataFrame(rows)
         df.columns = columns
         return df
 
 
-def query_bridge(engine: EngineProtocol, query: str) -> pd.DataFrame:
-    conn = engine.get_connection()  # could be reused / pooled
+def query_bridge(
+    engine: EngineProtocol, query: str
+) -> pd.DataFrame:
+    conn = (
+        engine.get_connection()
+    )  # could be reused / pooled
     return engine.run_query(query)

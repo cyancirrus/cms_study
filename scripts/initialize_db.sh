@@ -42,7 +42,7 @@ create_tables() {
 		"./etl/source/pch_hcahps_hospital.sql"
 		"./etl/source/timely_and_effective_care_hospital.sql"
 		"./etl/source/unplanned_hospital_visits_hospital.sql"
-		
+
 		"./etl/augmented/msa_centroid.sql"
 		"./etl/augmented/msa_dim.sql"
 		"./etl/augmented/msa_statistics.sql"

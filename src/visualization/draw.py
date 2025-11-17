@@ -17,8 +17,12 @@ def draw_summary(
 ):
     """Draw histograms for multiple columns as subplots."""
     cols = 2
-    rows = (len(columns) + cols - 1) // cols  # ceil division
-    _, axes = plt.subplots(rows, cols, figsize=(10, 4 * rows))
+    rows = (
+        len(columns) + cols - 1
+    ) // cols  # ceil division
+    _, axes = plt.subplots(
+        rows, cols, figsize=(10, 4 * rows)
+    )
     axes = axes.flatten()  # make iteration easier
 
     for ax, column in zip(axes, columns):
@@ -52,12 +56,18 @@ def draw_filter_summary(
 ):
     """Draw histograms for multiple columns as subplots."""
     cols = 2
-    rows = (len(conditions) + cols - 1) // cols  # ceil division
-    fig, axes = plt.subplots(rows, cols, figsize=(10, 4 * rows))
+    rows = (
+        len(conditions) + cols - 1
+    ) // cols  # ceil division
+    fig, axes = plt.subplots(
+        rows, cols, figsize=(10, 4 * rows)
+    )
     axes = axes.flatten()  # make iteration easier
 
     for ax, c in zip(axes, conditions):
-        df = column_filter_summary(database, year, table, column, measure, c)
+        df = column_filter_summary(
+            database, year, table, column, measure, c
+        )
         hist_data = histogram_summary(df, measure, bins)
         if hist_data is None:
             continue
@@ -90,12 +100,20 @@ def draw_zeroized_state_summary(
     """Draw histograms for multiple columns as subplots."""
     cols = 2
     rows = (len(labels) + cols - 1) // cols  # ceil division
-    fig, axes = plt.subplots(rows, cols, figsize=(10, 4 * rows))
+    fig, axes = plt.subplots(
+        rows, cols, figsize=(10, 4 * rows)
+    )
     axes = axes.flatten()  # make iteration easier
 
-    for ax, l, b, w, t in zip(axes, labels, better, worse, count):
-        df = zeroized_score_by_group(database, table, l, b, w, t, "state")
-        hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
+    for ax, l, b, w, t in zip(
+        axes, labels, better, worse, count
+    ):
+        df = zeroized_score_by_group(
+            database, table, l, b, w, t, "state"
+        )
+        hist_data = histogram_summary(
+            df, f"{l}_zeroized_score", bins
+        )
         if hist_data is None:
             continue
         ax.hist(
@@ -126,12 +144,20 @@ def draw_zeroized_facility_summary(
     """Draw histograms for multiple columns as subplots."""
     cols = 2
     rows = (len(labels) + cols - 1) // cols  # ceil division
-    fig, axes = plt.subplots(rows, cols, figsize=(10, 4 * rows))
+    fig, axes = plt.subplots(
+        rows, cols, figsize=(10, 4 * rows)
+    )
     axes = axes.flatten()  # make iteration easier
 
-    for ax, l, b, w, t in zip(axes, labels, better, worse, count):
-        df = zeroized_score_by_group(database, table, l, b, w, t, "facility_id")
-        hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
+    for ax, l, b, w, t in zip(
+        axes, labels, better, worse, count
+    ):
+        df = zeroized_score_by_group(
+            database, table, l, b, w, t, "facility_id"
+        )
+        hist_data = histogram_summary(
+            df, f"{l}_zeroized_score", bins
+        )
         if hist_data is None:
             continue
         ax.hist(
@@ -162,12 +188,20 @@ def draw_zeroized_type_summary(
     """Draw histograms for multiple columns as subplots."""
     cols = 2
     rows = (len(labels) + cols - 1) // cols  # ceil division
-    fig, axes = plt.subplots(rows, cols, figsize=(10, 4 * rows))
+    fig, axes = plt.subplots(
+        rows, cols, figsize=(10, 4 * rows)
+    )
     axes = axes.flatten()  # make iteration easier
 
-    for ax, l, b, w, t in zip(axes, labels, better, worse, count):
-        df = zeroized_score_by_group(database, table, l, b, w, t, "hospital_type")
-        hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
+    for ax, l, b, w, t in zip(
+        axes, labels, better, worse, count
+    ):
+        df = zeroized_score_by_group(
+            database, table, l, b, w, t, "hospital_type"
+        )
+        hist_data = histogram_summary(
+            df, f"{l}_zeroized_score", bins
+        )
         if hist_data is None:
             continue
         ax.hist(

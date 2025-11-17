@@ -28,7 +28,9 @@ def report_hvbp_tps(database: str, year: int):
         "weighted_efficiency_and_cost_reduction_domain_score",
         "total_performance_score",
     ]
-    draw_summary(database, year, output_file, "hvbp_tps", measures)
+    draw_summary(
+        database, year, output_file, "hvbp_tps", measures
+    )
 
 
 def report_fy_hospital_readmissions_reduction_program_hospital(
@@ -55,8 +57,12 @@ def report_fy_hospital_readmissions_reduction_program_hospital(
     )
 
 
-def report_hospital_general_information(database: str, year: int):
-    output_file: str = "./visualizations/hospital_general_information"
+def report_hospital_general_information(
+    database: str, year: int
+):
+    output_file: str = (
+        "./visualizations/hospital_general_information"
+    )
     measures: list[str] = [
         # # -- mortality
         "mort_group_measure_count",
@@ -88,11 +94,21 @@ def report_hospital_general_information(database: str, year: int):
         "count_of_facility_te_measures",
         # "te_group_footnote",
     ]
-    draw_summary(database, year, output_file, "hospital_general_information", measures)
+    draw_summary(
+        database,
+        year,
+        output_file,
+        "hospital_general_information",
+        measures,
+    )
 
 
-def report_fy_hac_reduction_program_hospital(database: str, year: int):
-    output_file: str = "./visualizations/fy_hac_reduction_program_hospital"
+def report_fy_hac_reduction_program_hospital(
+    database: str, year: int
+):
+    output_file: str = (
+        "./visualizations/fy_hac_reduction_program_hospital"
+    )
     measures: list[str] = [
         # "psi90_composite_value", this is null
         # "psi90_w_z_score",
@@ -110,12 +126,20 @@ def report_fy_hac_reduction_program_hospital(database: str, year: int):
         # "payment_reduction",
     ]
     draw_summary(
-        database, year, output_file, "fy_hac_reduction_program_hospital", measures
+        database,
+        year,
+        output_file,
+        "fy_hac_reduction_program_hospital",
+        measures,
     )
 
 
-def report_filter_complications_and_deaths_hospital(database: str, year: int):
-    output_file: str = "./visualizations/complications_and_deaths_hospital"
+def report_filter_complications_and_deaths_hospital(
+    database: str, year: int
+):
+    output_file: str = (
+        "./visualizations/complications_and_deaths_hospital"
+    )
     conditions: list[str] = [
         "Rate of complications for hip/knee replacement patients",
         "Hybrid Hospital-Wide All-Cause Risk Standardized Mortality Rate",
@@ -150,8 +174,12 @@ def report_filter_complications_and_deaths_hospital(database: str, year: int):
     )
 
 
-def report_zeroized_general_hospital_by_state(database: str, year: int):
-    output_file: str = "./visualizations/zeroized_hospital_general_information_state"
+def report_zeroized_general_hospital_by_state(
+    database: str, year: int
+):
+    output_file: str = (
+        "./visualizations/zeroized_hospital_general_information_state"
+    )
     labels: list[str] = [
         "mort",
         "safety",
@@ -184,8 +212,12 @@ def report_zeroized_general_hospital_by_state(database: str, year: int):
     )
 
 
-def report_zeroized_general_hospital_by_type(database: str, year: int):
-    output_file: str = "./visualizations/zeroized_hospital_general_information_type"
+def report_zeroized_general_hospital_by_type(
+    database: str, year: int
+):
+    output_file: str = (
+        "./visualizations/zeroized_hospital_general_information_type"
+    )
     labels: list[str] = [
         "mort",
         "safety",
@@ -218,7 +250,9 @@ def report_zeroized_general_hospital_by_type(database: str, year: int):
     )
 
 
-def report_medicare_hospital_spending_per_patient_hospital(database: str, year: int):
+def report_medicare_hospital_spending_per_patient_hospital(
+    database: str, year: int
+):
     output_file: str = (
         "./visualizations/medicare_hospital_spending_per_patient_hospital"
     )
@@ -235,8 +269,12 @@ def report_medicare_hospital_spending_per_patient_hospital(database: str, year: 
     )
 
 
-def report_zeroized_general_hospital_by_facility(database: str, year: int):
-    output_file: str = "./visualizations/zeroized_hospital_general_information_facility"
+def report_zeroized_general_hospital_by_facility(
+    database: str, year: int
+):
+    output_file: str = (
+        "./visualizations/zeroized_hospital_general_information_facility"
+    )
     labels: list[str] = [
         "mort",
         "safety",

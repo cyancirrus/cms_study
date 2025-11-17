@@ -5,7 +5,12 @@ import sqlite3
 
 
 def column_filter_summary(
-    database: str, year: int, table: str, column: str, measure: str, condition: str
+    database: str,
+    year: int,
+    table: str,
+    column: str,
+    measure: str,
+    condition: str,
 ) -> pd.DataFrame:
     with sqlite3.connect(database) as conn:
         df = pd.read_sql_query(
@@ -24,7 +29,9 @@ def column_filter_summary(
         return df
 
 
-def column_summary(database: str, year: int, table: str, column: str) -> pd.DataFrame:
+def column_summary(
+    database: str, year: int, table: str, column: str
+) -> pd.DataFrame:
     with sqlite3.connect(database) as conn:
         df = pd.read_sql_query(
             f"""
@@ -67,9 +74,9 @@ def zeroized_score_by_group(
         df = pd.read_sql_query(query, conn)
 
     # compute zeroized score
-    df[f"{label}_zeroized_score"] = (df["total_better"] - df["total_worse"]) / df[
-        "total_measures"
-    ]
+    df[f"{label}_zeroized_score"] = (
+        df["total_better"] - df["total_worse"]
+    ) / df["total_measures"]
     return df[[group, f"{label}_zeroized_score"]]
 
 
@@ -78,9 +85,13 @@ def histogram_summary(
 ) -> Dict[str, any] | None:
     """Compute histogram data for a column in a table."""
     if column not in df.columns:
-        raise ValueError(f"Column: {column} not found in table")
+        raise ValueError(
+            f"Column: {column} not found in table"
+        )
 
-    series = pd.to_numeric(df[column], errors="coerce").dropna()
+    series = pd.to_numeric(
+        df[column], errors="coerce"
+    ).dropna()
     if len(series) == 0:
         print(f"skipping column: {column}, no data")
         return None

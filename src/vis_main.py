@@ -33,14 +33,26 @@ if __name__ == "__main__":
     log_report_start("FY HAC Reduction Program", YEAR)
     report_fy_hac_reduction_program_hospital(DATABASE, YEAR)
 
-    log_report_start("FY Hospital Readmissions Reduction Program", YEAR)
-    report_fy_hospital_readmissions_reduction_program_hospital(DATABASE, YEAR)
+    log_report_start(
+        "FY Hospital Readmissions Reduction Program", YEAR
+    )
+    report_fy_hospital_readmissions_reduction_program_hospital(
+        DATABASE, YEAR
+    )
 
-    log_report_start("Medicare Hospital Spending Per Patient", YEAR)
-    report_medicare_hospital_spending_per_patient_hospital(DATABASE, YEAR)
+    log_report_start(
+        "Medicare Hospital Spending Per Patient", YEAR
+    )
+    report_medicare_hospital_spending_per_patient_hospital(
+        DATABASE, YEAR
+    )
 
-    log_report_start("Complications and Deaths Hospital", YEAR)
-    report_filter_complications_and_deaths_hospital(DATABASE, YEAR)
+    log_report_start(
+        "Complications and Deaths Hospital", YEAR
+    )
+    report_filter_complications_and_deaths_hospital(
+        DATABASE, YEAR
+    )
 
     # report_zeroized_general_hospital_by_state(YEAR);
     # report_zeroized_general_hospital_by_type(YEAR);

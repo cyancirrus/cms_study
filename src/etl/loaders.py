@@ -31,7 +31,9 @@ def load_and_clean_csv(path: str) -> pd.DataFrame:
     return df
 
 
-def load_and_enrich_region_csv(path: str, year: int) -> pd.DataFrame:
+def load_and_enrich_region_csv(
+    path: str, year: int
+) -> pd.DataFrame:
     # Areas like midwest atlantic data isfrom 2017 but shoudld be stable
     df = pd.read_csv(
         path,
@@ -47,14 +49,18 @@ def load_and_enrich_region_csv(path: str, year: int) -> pd.DataFrame:
     df.columns = [clean_column_name(c) for c in df.columns]
     df["year"] = year
 
-    df["fips_state_code"] = pd.to_numeric(df["fips_state_code"], errors="coerce")
+    df["fips_state_code"] = pd.to_numeric(
+        df["fips_state_code"], errors="coerce"
+    )
     df["region_id"], _ = pd.factorize(df["region"])
     # division_id: integers 0..n_divisions-1 in order of first appearance
     df["division_id"], _ = pd.factorize(df["division"])
     return df
 
 
-def load_and_clean_and_append_year_csv(path: str, year: int) -> pd.DataFrame:
+def load_and_clean_and_append_year_csv(
+    path: str, year: int
+) -> pd.DataFrame:
     # Set low_memory = false in pd.read_csv if error in a heterogeneous column but no current errors
     df = pd.read_csv(
         path,
@@ -78,7 +84,9 @@ def load_and_clean_and_append_year_csv(path: str, year: int) -> pd.DataFrame:
     return df
 
 
-def load_and_map_msa_statistics(path: str, year: int) -> pd.DataFrame:
+def load_and_map_msa_statistics(
+    path: str, year: int
+) -> pd.DataFrame:
     # 2023 unsure of the data refresh schedule
     df = pd.read_csv(
         path,
@@ -100,15 +108,27 @@ def load_and_map_msa_statistics(path: str, year: int) -> pd.DataFrame:
         }
     )
     df["year"] = year
-    df = df[["year", "cbsafp", "linecode", "description", "metric"]]
+    df = df[
+        [
+            "year",
+            "cbsafp",
+            "linecode",
+            "description",
+            "metric",
+        ]
+    ]
     df["cbsafp"] = df["cbsafp"].astype(int)
     df["linecode"] = df["linecode"].astype(int)
-    df["metric"] = pd.to_numeric(df["metric"], errors="coerce")
+    df["metric"] = pd.to_numeric(
+        df["metric"], errors="coerce"
+    )
     assert isinstance(df, pd.DataFrame)
     return df
 
 
-def load_and_map_msa_dim(path: str, year: int) -> pd.DataFrame:
+def load_and_map_msa_dim(
+    path: str, year: int
+) -> pd.DataFrame:
     # 2015 but dim codes are stable might be 2025 documentation is sparse need to verify
     df = pd.read_csv(
         path,
@@ -130,12 +150,21 @@ def load_and_map_msa_dim(path: str, year: int) -> pd.DataFrame:
         }
     )
     df["year"] = year
-    df = df[["year", "cbsafp", "cbsa_title", "state_abbreviation"]]
+    df = df[
+        [
+            "year",
+            "cbsafp",
+            "cbsa_title",
+            "state_abbreviation",
+        ]
+    ]
     assert isinstance(df, pd.DataFrame)
     return df
 
 
-def load_and_map_msa_centroids(path: str, year: int) -> pd.DataFrame:
+def load_and_map_msa_centroids(
+    path: str, year: int
+) -> pd.DataFrame:
     # 2025 as most recently updated
     df = pd.read_csv(
         path,
@@ -159,7 +188,14 @@ def load_and_map_msa_centroids(path: str, year: int) -> pd.DataFrame:
     )
     df["year"] = year
     df = df[
-        ["year", "cbsafp", "msa_title", "state_abbreviation", "latitude", "longitude"]
+        [
+            "year",
+            "cbsafp",
+            "msa_title",
+            "state_abbreviation",
+            "latitude",
+            "longitude",
+        ]
     ]
     df["cbsafp"] = df["cbsafp"].astype(int)
     df["latitude"] = df["latitude"].astype(float)
@@ -168,7 +204,9 @@ def load_and_map_msa_centroids(path: str, year: int) -> pd.DataFrame:
     return df
 
 
-def load_and_map_msa_zip(path: str, year: int) -> pd.DataFrame:
+def load_and_map_msa_zip(
+    path: str, year: int
+) -> pd.DataFrame:
     # 2015 but dim codes are stable might be 2025 documentation is sparse need to verify
     df = pd.read_csv(
         path,

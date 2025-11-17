@@ -14,7 +14,9 @@ from etl.loaders import (
 )
 
 
-def extract_cms_data(database: str, directory: str, year: int):
+def extract_cms_data(
+    database: str, directory: str, year: int
+):
     print("----------------------------------------")
     print(f"        Loading year {year}            ")
     print("----------------------------------------")
@@ -43,7 +45,10 @@ def extract_cms_data(database: str, directory: str, year: int):
         year,
     )
     process_table_append_year(
-        database, f"./{directory}/HCAHPS-Hospital.csv", "hcahps_hospital", year
+        database,
+        f"./{directory}/HCAHPS-Hospital.csv",
+        "hcahps_hospital",
+        year,
     )
     process_table_append_year(
         database,
@@ -58,7 +63,10 @@ def extract_cms_data(database: str, directory: str, year: int):
         year,
     )
     process_table_append_year(
-        database, f"./{directory}/PCH_HCAHPS_HOSPITAL.csv", "pch_hcahps_hospital", year
+        database,
+        f"./{directory}/PCH_HCAHPS_HOSPITAL.csv",
+        "pch_hcahps_hospital",
+        year,
     )
     process_table_append_year(
         database,
@@ -91,10 +99,23 @@ def extract_cms_data(database: str, directory: str, year: int):
         year,
     )
     process_table_append_year(
-        database, f"./{directory}/hvbp_safety.csv", "hvbp_safety", year
+        database,
+        f"./{directory}/hvbp_safety.csv",
+        "hvbp_safety",
+        year,
     )
-    process_table_append_year(database, f"./{directory}/hvbp_tps.csv", "hvbp_tps", year)
-    process_table_append_year(database, f"./{directory}/hvbp_tps.csv", "hvbp_tps", year)
+    process_table_append_year(
+        database,
+        f"./{directory}/hvbp_tps.csv",
+        "hvbp_tps",
+        year,
+    )
+    process_table_append_year(
+        database,
+        f"./{directory}/hvbp_tps.csv",
+        "hvbp_tps",
+        year,
+    )
     print()
 
 
@@ -126,7 +147,7 @@ def extract_augmented_tables(database: str):
         database,
         "./data/augmented/msa_dim.csv",
         "msa_dim",
-        2015
+        2015,
     )
     process_table_method(
         load_and_map_msa_statistics,
@@ -147,7 +168,15 @@ def extract_augmented_tables(database: str):
 def extract_all_years_cms(database: str):
     # Historical data is only consistent back to 2021
     extract_cms_data(database, "./data/source/", 2025)
-    extract_cms_data(database, "./data/historical/2024", 2024)
-    extract_cms_data(database, "./data/historical/2023", 2023)
-    extract_cms_data(database, "./data/historical/2022", 2022)
-    extract_cms_data(database, "./data/historical/2021", 2021)
+    extract_cms_data(
+        database, "./data/historical/2024", 2024
+    )
+    extract_cms_data(
+        database, "./data/historical/2023", 2023
+    )
+    extract_cms_data(
+        database, "./data/historical/2022", 2022
+    )
+    extract_cms_data(
+        database, "./data/historical/2021", 2021
+    )
