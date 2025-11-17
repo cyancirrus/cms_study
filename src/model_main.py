@@ -17,13 +17,9 @@ DATABASE = "source.db"
 
 
 class Model(Protocol):
-    def fit(
-        self, X: np.ndarray, y: np.ndarray
-    ) -> Model: ...
+    def fit(self, X: np.ndarray, y: np.ndarray) -> Model: ...
     def predict(self, X: np.ndarray) -> np.ndarray: ...
-    def score(
-        self, X: np.ndarray, y: np.ndarray
-    ) -> float: ...
+    def score(self, X: np.ndarray, y: np.ndarray) -> float: ...
 
 
 def load_data() -> pd.DataFrame:
@@ -53,9 +49,7 @@ def load_readmissions_scaled() -> pd.DataFrame:
     with sqlite3.connect(DATABASE) as conn:
         df = pd.read_sql_query(query, conn)
 
-    df = df.rename(
-        columns={"submission_year": "fiscal_year"}
-    )
+    df = df.rename(columns={"submission_year": "fiscal_year"})
     df["predicted_readmission_rate"] /= 1_000
     df["expected_readmission_rate"] /= 1_000
     return df
@@ -119,9 +113,7 @@ def structure_data_multivar_with_readmissions(
     df_prev["fiscal_year"] += 1  # ← CHANGE THIS (was -= 1)
 
     prev_cols = dimensions + list(
-        df_read.columns.difference(
-            ["facility_id", "fiscal_year"]
-        )
+        df_read.columns.difference(["facility_id", "fiscal_year"])
     )
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in prev_cols}
@@ -136,9 +128,7 @@ def structure_data_multivar_with_readmissions(
     )
 
     # Drop rows with NaNs in any required columns
-    cols_to_check = target + [
-        f"{c}_prev" for c in prev_cols
-    ]
+    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
     df_final = df_final.dropna(subset=cols_to_check)
 
     # Features: exclude previous-year target columns to prevent leakage
@@ -148,9 +138,7 @@ def structure_data_multivar_with_readmissions(
     print("Number of features:", len(feature_cols))
     print("Feature columns:", feature_cols)
     print("\nTarget columns we're predicting:", target)
-    print(
-        "--------------------------------------------------"
-    )
+    print("--------------------------------------------------")
     print("\nChecking for leakage:")
     print("Columns in df_final:", df_final.columns.tolist())
     print(
@@ -158,19 +146,14 @@ def structure_data_multivar_with_readmissions(
         [
             c
             for c in feature_cols
-            if any(t in c for t in target)
-            and "_prev" not in c
+            if any(t in c for t in target) and "_prev" not in c
         ],
     )
-    print(
-        "--------------------------------------------------"
-    )
+    print("--------------------------------------------------")
     # Prepare arrays
     x = df_final[feature_cols].values
     y = df_final[target].values
-    delta_y = (
-        y - df_final[[f"{c}_prev" for c in target]].values
-    )
+    delta_y = y - df_final[[f"{c}_prev" for c in target]].values
 
     return x, delta_y
 
@@ -237,9 +220,7 @@ def structure_data_multivar(
     prev_cols = dimensions
 
     # Drop NaNs
-    cols_to_check = target + [
-        f"{c}_prev" for c in prev_cols
-    ]
+    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
     df_final = df_merged.dropna(subset=cols_to_check)
 
     # Features: exclude previous-year targets to avoid leakage
@@ -249,9 +230,7 @@ def structure_data_multivar(
 
     x = df_final[feature_cols].values
     y = df_final[target].values
-    delta_y = (
-        y - df_final[[f"{c}_prev" for c in target]].values
-    )
+    delta_y = y - df_final[[f"{c}_prev" for c in target]].values
 
     return x, delta_y
 
@@ -286,16 +265,12 @@ def structure_data_ar(
     ]
     df_clean = df_merged.dropna(subset=cols_to_check)
 
-    x = df_clean[
-        ["mort_30_ami_performance_rate_prev"]
-    ].values
+    x = df_clean[["mort_30_ami_performance_rate_prev"]].values
     y = df_clean["mort_30_ami_performance_rate"].values
     return x, y
 
 
-def fit_linear_regression(
-    x: np.ndarray, y: np.ndarray
-) -> Model:
+def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
     model = LinearRegression()
     model.fit(x, y)
     return model
@@ -324,27 +299,19 @@ def fit_decision_tree_regression(
     return model
 
 
-def metrics(
-    model: Model, x: np.ndarray, y: np.ndarray
-) -> None:
+def metrics(model: Model, x: np.ndarray, y: np.ndarray) -> None:
     y_pred = model.predict(x)
     print(f"R² (model score): {model.score(x, y):.4f}")
-    print(
-        f"R² (manual r2_score): {r2_score(y, y_pred):.4f}"
-    )
+    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
 
 
 def metrics_relative(
     model: Model, x: np.ndarray, y: np.ndarray
 ) -> None:
     y_pred = model.predict(x)
-    mae_rel = np.mean(np.abs(y - y_pred)) / np.mean(
-        np.abs(y)
-    )
+    mae_rel = np.mean(np.abs(y - y_pred)) / np.mean(np.abs(y))
     print(f"R² (model score): {model.score(x, y):.4f}")
-    print(
-        f"R² (manual r2_score): {r2_score(y, y_pred):.4f}"
-    )
+    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
     print(f"Relative MAE: {mae_rel:.4f}")
 
 
@@ -392,9 +359,7 @@ if __name__ == "__main__":
     df = load_data()
     df_read = load_readmissions_scaled()
 
-    x, y = structure_data_multivar_with_readmissions(
-        df, df_read
-    )
+    x, y = structure_data_multivar_with_readmissions(df, df_read)
     # x, y = structure_data_multivar(df)
 
     x_train, x_test, y_train, y_test = train_test_split(

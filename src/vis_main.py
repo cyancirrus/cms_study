@@ -47,9 +47,7 @@ if __name__ == "__main__":
         DATABASE, YEAR
     )
 
-    log_report_start(
-        "Complications and Deaths Hospital", YEAR
-    )
+    log_report_start("Complications and Deaths Hospital", YEAR)
     report_filter_complications_and_deaths_hospital(
         DATABASE, YEAR
     )

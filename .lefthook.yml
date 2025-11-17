@@ -6,7 +6,7 @@ pre-commit:
         PYTHONPATH=./ pytest ./tests
     format-python:
       run: |
-        black --line-length 66 .
+        black --line-length 72 .
       glob: "*.py"
     format-shell:
       run: |

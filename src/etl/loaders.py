@@ -119,16 +119,12 @@ def load_and_map_msa_statistics(
     ]
     df["cbsafp"] = df["cbsafp"].astype(int)
     df["linecode"] = df["linecode"].astype(int)
-    df["metric"] = pd.to_numeric(
-        df["metric"], errors="coerce"
-    )
+    df["metric"] = pd.to_numeric(df["metric"], errors="coerce")
     assert isinstance(df, pd.DataFrame)
     return df
 
 
-def load_and_map_msa_dim(
-    path: str, year: int
-) -> pd.DataFrame:
+def load_and_map_msa_dim(path: str, year: int) -> pd.DataFrame:
     # 2015 but dim codes are stable might be 2025 documentation is sparse need to verify
     df = pd.read_csv(
         path,
@@ -141,7 +137,6 @@ def load_and_map_msa_dim(
             "",
         ],
     )
-
     df.columns = [clean_column_name(c) for c in df.columns]
     df = df.rename(
         columns={
@@ -178,6 +173,7 @@ def load_and_map_msa_centroids(
         ],
     )
 
+
     df.columns = [clean_column_name(c) for c in df.columns]
     df = df.rename(
         columns={
@@ -186,6 +182,7 @@ def load_and_map_msa_centroids(
             "intptlon": "longitude",
         }
     )
+
     df["year"] = year
     df = df[
         [
@@ -204,9 +201,7 @@ def load_and_map_msa_centroids(
     return df
 
 
-def load_and_map_msa_zip(
-    path: str, year: int
-) -> pd.DataFrame:
+def load_and_map_msa_zip(path: str, year: int) -> pd.DataFrame:
     # 2015 but dim codes are stable might be 2025 documentation is sparse need to verify
     df = pd.read_csv(
         path,

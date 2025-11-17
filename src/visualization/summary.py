@@ -85,13 +85,9 @@ def histogram_summary(
 ) -> Dict[str, any] | None:
     """Compute histogram data for a column in a table."""
     if column not in df.columns:
-        raise ValueError(
-            f"Column: {column} not found in table"
-        )
+        raise ValueError(f"Column: {column} not found in table")
 
-    series = pd.to_numeric(
-        df[column], errors="coerce"
-    ).dropna()
+    series = pd.to_numeric(df[column], errors="coerce").dropna()
     if len(series) == 0:
         print(f"skipping column: {column}, no data")
         return None

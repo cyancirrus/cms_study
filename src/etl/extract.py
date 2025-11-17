@@ -1,7 +1,6 @@
 from etl.process import (
     process_table_method,
     process_table_append_year,
-    process_table_region,
     process_table,
 )
 from etl.loaders import (
@@ -10,13 +9,10 @@ from etl.loaders import (
     load_and_map_msa_dim,
     load_and_map_msa_centroids,
     load_and_map_msa_zip,
-    load_and_clean_and_append_year_csv,
 )
 
 
-def extract_cms_data(
-    database: str, directory: str, year: int
-):
+def extract_cms_data(database: str, directory: str, year: int):
     print("----------------------------------------")
     print(f"        Loading year {year}            ")
     print("----------------------------------------")
@@ -139,13 +135,13 @@ def extract_augmented_tables(database: str):
         load_and_map_msa_centroids,
         database,
         "./data/augmented/msa/msa_centroids.csv",
-        "msa_centroids",
+        "msa_centroid",
         2025,
     )
     process_table_method(
         load_and_map_msa_dim,
         database,
-        "./data/augmented/msa_dim.csv",
+        "./data/augmented/msa/msa_dim.csv",
         "msa_dim",
         2015,
     )
@@ -159,7 +155,7 @@ def extract_augmented_tables(database: str):
     process_table_method(
         load_and_map_msa_zip,
         database,
-        "./data/augmented/zip_lat_long.csv",
+        "./data/augmented/msa/zip_lat_long.csv",
         "zip_lat_long",
         2015,
     )
@@ -168,15 +164,7 @@ def extract_augmented_tables(database: str):
 def extract_all_years_cms(database: str):
     # Historical data is only consistent back to 2021
     extract_cms_data(database, "./data/source/", 2025)
-    extract_cms_data(
-        database, "./data/historical/2024", 2024
-    )
-    extract_cms_data(
-        database, "./data/historical/2023", 2023
-    )
-    extract_cms_data(
-        database, "./data/historical/2022", 2022
-    )
-    extract_cms_data(
-        database, "./data/historical/2021", 2021
-    )
+    extract_cms_data(database, "./data/historical/2024", 2024)
+    extract_cms_data(database, "./data/historical/2023", 2023)
+    extract_cms_data(database, "./data/historical/2022", 2022)
+    extract_cms_data(database, "./data/historical/2021", 2021)

@@ -57,9 +57,7 @@ def report_fy_hospital_readmissions_reduction_program_hospital(
     )
 
 
-def report_hospital_general_information(
-    database: str, year: int
-):
+def report_hospital_general_information(database: str, year: int):
     output_file: str = (
         "./visualizations/hospital_general_information"
     )

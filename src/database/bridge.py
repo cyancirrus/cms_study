@@ -14,9 +14,7 @@ SQLITE_PATH = os.getenv("SQLITE_PATH", "source.db")
 def _sqlite_query(sql: str, params=None) -> pd.DataFrame:
     conn = sqlite3.connect(SQLITE_PATH)
     try:
-        return pd.read_sql_query(
-            sql, conn, params=params or {}
-        )
+        return pd.read_sql_query(sql, conn, params=params or {})
     finally:
         conn.close()
 
@@ -79,9 +77,7 @@ class SQLiteEngine:
     def run_query(self, query: str) -> pd.DataFrame:
         cursor = self.conn.execute(query)
         rows = cursor.fetchall()
-        columns = [
-            str(desc[0]) for desc in cursor.description
-        ]
+        columns = [str(desc[0]) for desc in cursor.description]
         df = pd.DataFrame(rows)
         df.columns = columns
         return df
@@ -90,7 +86,5 @@ class SQLiteEngine:
 def query_bridge(
     engine: EngineProtocol, query: str
 ) -> pd.DataFrame:
-    conn = (
-        engine.get_connection()
-    )  # could be reused / pooled
+    conn = engine.get_connection()  # could be reused / pooled
     return engine.run_query(query)
