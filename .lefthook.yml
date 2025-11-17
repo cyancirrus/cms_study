@@ -16,20 +16,4 @@ pre-commit:
     format-sql:
       run: |
         ./hooks/formatters/sql.sh
-      glob: "*.sql"
-
-# pre-commit:
-#   # parallel: true  # optional
-#   commands:
-#     unit-tests:
-#       run: |
-#         PYTHONPATH=./ pytest ./tests
-#     format-python:
-#       run: |
-#         black --line-length 72 .
-#       glob: "*.py"
-#     format-shell:
-#       run: |
-#         shfmt -w ./scripts
-#       glob: "*.sh"
-
+      glob: "**/*.sql"
