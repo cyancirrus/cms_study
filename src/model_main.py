@@ -10,6 +10,12 @@ from sklearn.linear_model import (
     MultiTaskLasso,
 )
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import (
+    RandomForestRegressor,
+    GradientBoostingRegressor,
+)
+
+
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 
@@ -44,9 +50,10 @@ def load_readmissions_scaled() -> pd.DataFrame:
             expected_readmission_rate
         FROM fy_hospital_readmissions_reduction_program_hospital
         WHERE
-            measure_name = "READM-30-AMI-HRRP"
+            measure_name = "READM-30-COPD-HRRP"
     ;
      """
+    # measure_name = "READM-30-AMI-HRRP"
     with sqlite3.connect(DATABASE) as conn:
         df = pd.read_sql_query(query, conn)
 
@@ -260,7 +267,7 @@ def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
 def fit_lasso_regression(
     x: np.ndarray, y: np.ndarray, alpha: float
 ) -> MultiTaskLasso:
-    model = MultiTaskLasso(alpha=alpha, max_iter=10_000)
+    model = MultiTaskLasso(alpha=alpha, max_iter=1_000)
     model.fit(x, y)
     return model
 
@@ -269,13 +276,15 @@ def fit_decision_tree_regression(
     x: np.ndarray, y: np.ndarray
 ) -> DecisionTreeRegressor:
     # model = DecisionTreeRegressor()
-    # model = DecisionTreeRegressor(
-    #     max_depth=6,           # Shallow tree
-    #     min_samples_split=15,
-    #     min_samples_leaf=15,
-    #     random_state=42
-    # )
-    model = DecisionTreeRegressor()
+    model = DecisionTreeRegressor(
+        max_depth=24,
+        min_samples_split=2,
+        min_samples_leaf=16,
+        random_state=42,
+    )
+    # model = DecisionTreeRegressor()
+    # model = RandomForestRegressor(10_000)
+    # model = GradientBoostingRegressor()
     model.fit(x, y)
     return model
 
