@@ -47,18 +47,14 @@ def load_and_enrich_region_csv(path: str, year: int) -> pd.DataFrame:
     df.columns = [clean_column_name(c) for c in df.columns]
     df["year"] = year
 
-    df["fips_state_code"] = pd.to_numeric(
-        df["fips_state_code"], errors="coerce"
-    )
+    df["fips_state_code"] = pd.to_numeric(df["fips_state_code"], errors="coerce")
     df["region_id"], _ = pd.factorize(df["region"])
     # division_id: integers 0..n_divisions-1 in order of first appearance
     df["division_id"], _ = pd.factorize(df["division"])
     return df
 
 
-def load_and_clean_and_append_year_csv(
-    path: str, year: int
-) -> pd.DataFrame:
+def load_and_clean_and_append_year_csv(path: str, year: int) -> pd.DataFrame:
     # Set low_memory = false in pd.read_csv if error in a heterogeneous column but no current errors
     df = pd.read_csv(
         path,

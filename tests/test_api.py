@@ -13,10 +13,7 @@ def test_root_endpoint():
     response = client.get("/")
     assert response.status_code == 200
     assert "message" in response.json()
-    assert (
-        response.json()["message"]
-        == "Hospital Recommendation API is running!"
-    )
+    assert response.json()["message"] == "Hospital Recommendation API is running!"
 
 
 def test_favicon_endpoint():
@@ -40,9 +37,7 @@ def test_favicon_endpoint():
         ),
     ],
 )
-def test_recommend_hospital_endpoint(
-    zip_code, hospital_type, service_category
-):
+def test_recommend_hospital_endpoint(zip_code, hospital_type, service_category):
     response = client.get(
         "/recommend_hospital",
         params={

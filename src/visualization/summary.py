@@ -29,9 +29,7 @@ def column_filter_summary(
         return df
 
 
-def column_summary(
-    database: str, year: int, table: str, column: str
-) -> pd.DataFrame:
+def column_summary(database: str, year: int, table: str, column: str) -> pd.DataFrame:
     with sqlite3.connect(database) as conn:
         df = pd.read_sql_query(
             f"""
@@ -74,9 +72,9 @@ def zeroized_score_by_group(
         df = pd.read_sql_query(query, conn)
 
     # compute zeroized score
-    df[f"{label}_zeroized_score"] = (
-        df["total_better"] - df["total_worse"]
-    ) / df["total_measures"]
+    df[f"{label}_zeroized_score"] = (df["total_better"] - df["total_worse"]) / df[
+        "total_measures"
+    ]
     return df[[group, f"{label}_zeroized_score"]]
 
 

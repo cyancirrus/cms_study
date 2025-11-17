@@ -57,9 +57,7 @@ def draw_filter_summary(
     axes = axes.flatten()  # make iteration easier
 
     for ax, c in zip(axes, conditions):
-        df = column_filter_summary(
-            database, year, table, column, measure, c
-        )
+        df = column_filter_summary(database, year, table, column, measure, c)
         hist_data = histogram_summary(df, measure, bins)
         if hist_data is None:
             continue
@@ -96,9 +94,7 @@ def draw_zeroized_state_summary(
     axes = axes.flatten()  # make iteration easier
 
     for ax, l, b, w, t in zip(axes, labels, better, worse, count):
-        df = zeroized_score_by_group(
-            database, table, l, b, w, t, "state"
-        )
+        df = zeroized_score_by_group(database, table, l, b, w, t, "state")
         hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
         if hist_data is None:
             continue
@@ -134,9 +130,7 @@ def draw_zeroized_facility_summary(
     axes = axes.flatten()  # make iteration easier
 
     for ax, l, b, w, t in zip(axes, labels, better, worse, count):
-        df = zeroized_score_by_group(
-            database, table, l, b, w, t, "facility_id"
-        )
+        df = zeroized_score_by_group(database, table, l, b, w, t, "facility_id")
         hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
         if hist_data is None:
             continue
@@ -172,9 +166,7 @@ def draw_zeroized_type_summary(
     axes = axes.flatten()  # make iteration easier
 
     for ax, l, b, w, t in zip(axes, labels, better, worse, count):
-        df = zeroized_score_by_group(
-            database, table, l, b, w, t, "hospital_type"
-        )
+        df = zeroized_score_by_group(database, table, l, b, w, t, "hospital_type")
         hist_data = histogram_summary(df, f"{l}_zeroized_score", bins)
         if hist_data is None:
             continue

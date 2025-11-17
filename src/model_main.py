@@ -115,9 +115,7 @@ def structure_data_multivar_with_readmissions(
     prev_cols = dimensions + list(
         df_read.columns.difference(["facility_id", "fiscal_year"])
     )
-    df_prev = df_prev.rename(
-        columns={c: f"{c}_prev" for c in prev_cols}
-    )
+    df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in prev_cols})
 
     # Now current year row gets actual previous year's features
     df_final = pd.merge(
@@ -143,11 +141,7 @@ def structure_data_multivar_with_readmissions(
     print("Columns in df_final:", df_final.columns.tolist())
     print(
         "\nAny non-_prev target columns in features?",
-        [
-            c
-            for c in feature_cols
-            if any(t in c for t in target) and "_prev" not in c
-        ],
+        [c for c in feature_cols if any(t in c for t in target) and "_prev" not in c],
     )
     print("--------------------------------------------------")
     # Prepare arrays
@@ -206,9 +200,7 @@ def structure_data_multivar(
 
     df_prev = df_perf.copy()
     df_prev["fiscal_year"] += 1
-    df_prev = df_prev.rename(
-        columns={c: f"{c}_prev" for c in dimensions}
-    )
+    df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in dimensions})
 
     df_merged = pd.merge(
         df_perf,
@@ -237,16 +229,12 @@ def structure_data_ar(
     df: pd.DataFrame,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Prepare autoregressive features for a single target (AMI)."""
-    performance_cols = [
-        c for c in df.columns if "performance_rate" in c
-    ]
+    performance_cols = [c for c in df.columns if "performance_rate" in c]
     df_perf = df[["facility_id", "fiscal_year"] + performance_cols]
 
     df_prev = df_perf.copy()
     df_prev["fiscal_year"] += 1
-    df_prev = df_prev.rename(
-        columns={c: f"{c}_prev" for c in performance_cols}
-    )
+    df_prev = df_prev.rename(columns={c: f"{c}_prev" for c in performance_cols})
 
     df_merged = pd.merge(
         df_perf,
@@ -280,9 +268,7 @@ def fit_lasso_regression(
     return model
 
 
-def fit_decision_tree_regression(
-    x: np.ndarray, y: np.ndarray
-) -> DecisionTreeRegressor:
+def fit_decision_tree_regression(x: np.ndarray, y: np.ndarray) -> DecisionTreeRegressor:
     # model = DecisionTreeRegressor()
     # model = DecisionTreeRegressor(
     #     max_depth=6,           # Shallow tree
@@ -301,9 +287,7 @@ def metrics(model: Model, x: np.ndarray, y: np.ndarray) -> None:
     print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
 
 
-def metrics_relative(
-    model: Model, x: np.ndarray, y: np.ndarray
-) -> None:
+def metrics_relative(model: Model, x: np.ndarray, y: np.ndarray) -> None:
     y_pred = model.predict(x)
     mae_rel = np.mean(np.abs(y - y_pred)) / np.mean(np.abs(y))
     print(f"R² (model score): {model.score(x, y):.4f}")
