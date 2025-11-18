@@ -74,7 +74,7 @@ transform_data() {
 
 initialize_environment
 
-# Incase the database didn't exist prior
+# # Incase the database didn't exist prior
 create_database
 remove_database
 create_database

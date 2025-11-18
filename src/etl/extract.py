@@ -160,6 +160,7 @@ def extract_augmented_tables(engine: EngineProtocol):
         CmsSchema.zip_lat_long,
         2015,
     )
+    print()
 
 
 def extract_all_years_cms(engine: EngineProtocol):

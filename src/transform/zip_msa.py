@@ -1,11 +1,7 @@
-import pandas as pd
-import numpy as np
+from sklearn.neighbors import BallTree
 from typing import Final, Dict
-from sklearn.neighbors import BallTree
-
-import pandas as pd
 import numpy as np
-from sklearn.neighbors import BallTree
+import pandas as pd
 
 LINECODE_FEATURE_MAP: Final[Dict[str, str]] = {
     "1": "personal_income_k",
@@ -13,21 +9,13 @@ LINECODE_FEATURE_MAP: Final[Dict[str, str]] = {
     "3": "per_capita_income",
 }
 
-from sklearn.neighbors import BallTree
-import numpy as np
-import pandas as pd
-
-import numpy as np
-import pandas as pd
-from sklearn.neighbors import BallTree
-
 
 def zip_to_msa_smoothed(
     zip_lat_long: pd.DataFrame,
     msa_dim: pd.DataFrame,
     msa_centroids: pd.DataFrame,
     msa_stats: pd.DataFrame,
-    k: int = 3,
+    k: int,
     sigma_km: float = 50.0,
 ) -> pd.DataFrame:
     # Ensure consistent types

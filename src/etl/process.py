@@ -54,4 +54,6 @@ def process_table_append_year(
 ):
     print(f"loading table: {table_name}")
     df = load_and_clean_and_append_year_csv(data_path, year)
+    print(df.columns)
+    # print(df["sub_2"].head);
     insert_into_existing_table(engine, df, table_name)

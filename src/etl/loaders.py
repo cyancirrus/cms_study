@@ -4,6 +4,7 @@ import re
 
 def clean_column_name(col: str) -> str:
     col = col.strip().lower()
+    col = re.sub("%", "_percent", col)
     col = re.sub(r"[^a-z0-9]+", "_", col)
     col = re.sub(r"_+", "_", col).strip("_")
     return col

@@ -445,14 +445,14 @@ def fit_decision_tree_regression(
     x: np.ndarray, y: np.ndarray
 ) -> DecisionTreeRegressor:
     # model = DecisionTreeRegressor()
-    model = DecisionTreeRegressor(
-        max_depth=24,
-        min_samples_split=2,
-        min_samples_leaf=16,
-        random_state=42,
-    )
+    # model = DecisionTreeRegressor(
+    #     max_depth=24,
+    #     min_samples_split=2,
+    #     min_samples_leaf=16,
+    #     random_state=42,
+    # )
     # model = DecisionTreeRegressor()
-    # model = RandomForestRegressor(10_000)
+    model = RandomForestRegressor(1_000)
     # model = GradientBoostingRegressor()
     model.fit(x, y)
     return model
@@ -510,7 +510,8 @@ def plot_delta_scatter(
         ax.set_ylabel("Δy predicted")
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig(f"./metrics/medicare", dpi=150)
+    # plt.show()
     plt.close()
 
 
@@ -526,10 +527,10 @@ if __name__ == "__main__":
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=0.2, random_state=42
     )
-
-    # model = fit_linear_regression(x_train, y_train)
+    # BEST MODEL CURRENTLY
+    model = fit_linear_regression(x_train, y_train)
     # model = fit_decision_tree_regression(x_train, y_train)
-    model = fit_lasso_regression(x_train, y_train, 1e-9)
+    # model = fit_lasso_regression(x_train, y_train, 1e-9)
 
     print("Metrics on training set:")
     metrics(model, x_train, y_train)
