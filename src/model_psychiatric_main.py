@@ -1,6 +1,7 @@
 from __future__ import annotations
+from initialize_environment import RANDOM_STATE, ENGINE
 import sqlite3
-from typing import List, Tuple
+from typing import List, Tuple, Final
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression, MultiTaskLasso
@@ -9,30 +10,42 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 
+from train.models import (
+    plot_delta_scatter,
+    metrics_rsquared,
+    metrics_relative,
+    fit_linear_regression,
+    fit_lasso_regression,
+    fit_decision_tree_regression,
+    fit_gbm_regression,
+    # fit_random_forest_regression
+)
+
 DATABASE = "source.db"
+# hbips_2_overall_rate_per_1000 is not NULL
+# and hbips_3_overall_rate_per_1000 is not NULL
+QUERY_IPFQR_MEASURES: Final[
+    str
+] = """
+SELECT * FROM ipfqr_quality_measures_facility
+    WHERE 
+        smd_percent IS NOT NULL
+        AND sub_2_percent IS NOT NULL
+        AND sub_3_percent IS NOT NULL
+        AND tob_3_percent IS NOT NULL
+        AND tob_3a_percent IS NOT NULL
+        AND tr_1_percent IS NOT NULL
+        AND imm_2_percent IS NOT NULL
+        AND readm_30_ipf_rate IS NOT NULL
+
+;"""
 
 
 def load_data() -> pd.DataFrame:
     """Load IPFQR facility quality measures."""
-    with sqlite3.connect(DATABASE) as conn:
-        df = pd.read_sql_query(
-            """SELECT * FROM ipfqr_quality_measures_facility
-                WHERE 
-                    hbips_2_overall_rate_per_1000 IS NOT NULL
-                    AND hbips_3_overall_rate_per_1000 IS NOT NULL
-                    AND smd_percent IS NOT NULL
-                    AND sub_2_percent IS NOT NULL
-                    AND sub_3_percent IS NOT NULL
-                    AND tob_3_percent IS NOT NULL
-                    AND tob_3a_percent IS NOT NULL
-                    AND tr_1_percent IS NOT NULL
-                    AND imm_2_percent IS NOT NULL
-                    AND readm_30_ipf_rate IS NOT NULL
-            ;""",
-            conn,
-        )
-        # print(df.head)
-        return df
+    df = ENGINE.exec(QUERY_IPFQR_MEASURES)
+    print(df.head)
+    return df
 
 
 def structure_ipfqr_data(
@@ -43,9 +56,10 @@ def structure_ipfqr_data(
     using previous-year autoregressive features.
     """
     granularity = ["submission_year", "facility_id"]
+    # Identify all percent columns as targets
     target_cols = [
-        "hbips_2_overall_rate_per_1000",
-        "hbips_3_overall_rate_per_1000",
+        # "hbips_2_overall_rate_per_1000",
+        # "hbips_3_overall_rate_per_1000",
         "smd_percent",
         "sub_2_percent",
         "sub_3_percent",
@@ -57,15 +71,13 @@ def structure_ipfqr_data(
     ]
 
     df_perf = df[granularity + target_cols]
+
     # Shift forward to create previous-year features
     df_prev = df_perf.copy()
     df_prev["submission_year"] += 1
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in target_cols}
     )
-    print("df_prev")
-    print(df_prev.shape)
-    print("----------------------------------")
 
     # Merge to get previous-year features
     df_merged = pd.merge(
@@ -74,9 +86,11 @@ def structure_ipfqr_data(
         on=["facility_id", "submission_year"],
         how="inner",
     )
+
     # Drop rows with NaNs in targets or previous-year targets
     cols_to_check = target_cols + [f"{c}_prev" for c in target_cols]
     df_clean = df_merged.dropna(subset=cols_to_check)
+
     # Features: previous-year percent columns
     feature_cols = [f"{c}_prev" for c in target_cols]
 
@@ -87,71 +101,183 @@ def structure_ipfqr_data(
     return x, delta_y, target_cols
 
 
-def fit_decision_tree_regression(
-    x: np.ndarray, y: np.ndarray
-) -> RandomForestRegressor:
-    model = RandomForestRegressor(n_estimators=1000, random_state=42)
-    model.fit(x, y)
-    return model
+def structure_ipfqr_with_demographics(
+    df: pd.DataFrame, db_path: str = DATABASE
+) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+    """
+    Prepare feature matrix X and target delta_y for IPFQR data,
+    using previous-year autoregressive features plus zip demographics.
 
+    - Targets: IPF quality/readmission metrics (current year).
+    - Features: previous-year targets + previous-year demographics.
+    """
 
-def metrics(model, x: np.ndarray, y: np.ndarray):
-    y_pred = model.predict(x)
-    print(f"R² (model score): {model.score(x, y):.4f}")
-    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
+    granularity = ["submission_year", "facility_id"]
 
+    # Core metrics you know are non-null (aligned with SQL WHERE)
+    target_cols = [
+        # "hbips_2_overall_rate_per_1000",
+        # "hbips_3_overall_rate_per_1000",
+        "smd_percent",
+        "sub_2_percent",
+        "sub_3_percent",
+        "tob_3_percent",
+        "tob_3a_percent",
+        "tr_1_percent",
+        "imm_2_percent",
+        "readm_30_ipf_rate",
+    ]
 
-def metrics_relative(model, x: np.ndarray, y: np.ndarray):
-    y_pred = model.predict(x)
-    mae_rel = np.mean(np.abs(y - y_pred)) / np.mean(np.abs(y))
-    print(f"Relative MAE: {mae_rel:.4f}")
-
-
-def plot_delta_scatter(
-    y_true: np.ndarray, y_pred: np.ndarray, target_names: List[str]
-):
-    n_targets = y_true.shape[1]
-    ncols = 3
-    nrows = int(np.ceil(n_targets / ncols))
-    fig, axes = plt.subplots(
-        nrows, ncols, figsize=(5 * ncols, 4 * nrows)
-    )
-    axes = axes.flatten()
-    for i, ax in enumerate(axes):
-        if i >= n_targets:
-            ax.axis("off")
-            continue
-        ax.scatter(y_true[:, i], y_pred[:, i], alpha=0.6)
-        min_val, max_val = y_true[:, i].min(), y_true[:, i].max()
-        ax.plot(
-            [min_val, max_val], [min_val, max_val], "r--", linewidth=1
+    # --- load facility_zip_code + zip_demographics ---
+    with sqlite3.connect(db_path) as conn:
+        df_fac_zip = pd.read_sql_query(
+            """
+            SELECT
+                submission_year AS submission_year,
+                facility_id,
+                zip_code
+            FROM facility_zip_code;
+            """,
+            conn,
         )
-        ax.set_title(target_names[i])
-        ax.set_xlabel("Δy true")
-        ax.set_ylabel("Δy predicted")
-    plt.tight_layout()
-    plt.savefig(f"./metrics/psychiatric", dpi=150)
-    plt.close()
+        df_zip_demo = pd.read_sql_query(
+            """
+            SELECT
+                zip_code,
+                msa_personal_income_k  as msa_personal_income_k,
+                msa_population_density  as msa_population_density,
+                msa_per_capita_income  as msa_per_capita_income
+            FROM zip_demographics;
+            """,
+            conn,
+        )
+
+    # Z-score normalize demos
+    for col in [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]:
+        mean = df_zip_demo[col].mean()
+        std = df_zip_demo[col].std()
+        df_zip_demo[col] = (df_zip_demo[col] - mean) / std
+
+    # normalize dtypes for join keys
+    df["facility_id"] = df["facility_id"]
+    df["submission_year"] = df["submission_year"].astype("int64")
+
+    df_fac_zip["facility_id"] = df_fac_zip["facility_id"]
+    df_fac_zip["submission_year"] = df_fac_zip[
+        "submission_year"
+    ].astype("int64")
+    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
+
+    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
+
+    # facility-year -> zip -> demographics
+    df_zip = pd.merge(
+        df_fac_zip,
+        df_zip_demo,
+        on="zip_code",
+        how="left",
+    )
+
+    # --- base perf data (only targets + keys) ---
+    df_perf = df[granularity + target_cols]
+
+    # --- attach current-year demographics (will become "prev" after shift) ---
+    df_merged = pd.merge(
+        df_perf,
+        df_zip[
+            [
+                "facility_id",
+                "submission_year",
+                "msa_personal_income_k",
+                "msa_population_density",
+                "msa_per_capita_income",
+            ]
+        ],
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    # --- shift to build previous-year features ---
+    df_prev = df_merged.copy()
+    # so that row (facility, year=t) will pick up year t-1's features
+    df_prev["submission_year"] += 1
+
+    prev_cols = target_cols + [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]
+
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in prev_cols}
+    )
+
+    # Merge current year with previous-year features
+    df_final = pd.merge(
+        df_merged,
+        df_prev,
+        on=["facility_id", "submission_year"],
+        how="inner",
+    )
+
+    # Drop rows with NaNs in targets or all prev features
+    cols_to_check = (
+        target_cols
+        + [f"{c}_prev" for c in target_cols]  # prev targets (for delta)
+        + [
+            "msa_personal_income_k_prev",
+            "msa_population_density_prev",
+            "msa_per_capita_income_prev",
+        ]
+    )
+    df_final = df_final.dropna(subset=cols_to_check)
+
+    # Features: previous-year targets + previous-year demos
+    feature_cols = [f"{c}_prev" for c in prev_cols]
+
+    x = df_final[feature_cols].values
+    y = df_final[target_cols].values
+    # deltas relative to previous-year target values
+    delta_y = y - df_final[[f"{c}_prev" for c in target_cols]].values
+
+    return x, delta_y, target_cols
 
 
 if __name__ == "__main__":
     df = load_data()
-    print(df.columns)
-    print(df.shape)
     x, delta_y, targets = structure_ipfqr_data(df)
+
     print(x.shape)
 
+    raise Exception
     x_train, x_test, y_train, y_test = train_test_split(
-        x, delta_y, test_size=0.2, random_state=42
+        x, delta_y, test_size=0.2, random_state=RANDOM_STATE
+    )
+    assert isinstance(x_train, np.ndarray)
+    assert isinstance(y_train, np.ndarray)
+    assert isinstance(x_test, np.ndarray)
+    assert isinstance(y_test, np.ndarray)
+
+    model = fit_decision_tree_regression(
+        x_train,
+        y_train,
+        max_depth=16,
+        min_samples_split=30,
+        min_samples_leaf=4,
+        random_state=RANDOM_STATE,
     )
 
-    model = fit_decision_tree_regression(x_train, y_train)
-
     print("Metrics on training set:")
-    metrics(model, x_train, y_train)
+    metrics_rsquared(model, x_train, y_train)
     print("\nMetrics on test set:")
-    metrics(model, x_test, y_test)
+    metrics_rsquared(model, x_test, y_test)
     metrics_relative(model, x_test, y_test)
 
     delta_pred = model.predict(x_test)
-    plot_delta_scatter(y_test, delta_pred, targets)
+    plot_delta_scatter(
+        "./metrics/psychiatric", y_test, delta_pred, targets
+    )

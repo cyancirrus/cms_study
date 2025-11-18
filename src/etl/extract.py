@@ -126,13 +126,6 @@ def extract_augmented_tables(engine: EngineProtocol):
         2025,
     )
     process_table_method(
-        load_and_map_msa_zip,
-        engine,
-        "./data/augmented/msa/zip_lat_long.csv",
-        CmsSchema.zip_lat_long,
-        2015,
-    )
-    process_table_method(
         load_and_map_msa_centroids,
         engine,
         "./data/augmented/msa/msa_centroids.csv",

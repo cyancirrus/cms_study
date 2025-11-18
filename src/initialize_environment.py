@@ -8,4 +8,5 @@ load_dotenv()
 
 BACKEND: Final[str] = os.getenv("BACKEND", "sqlite")
 DATABASE: Final[str] = os.getenv("DATABASE", "source.db")
+RANDOM_STATE: Final[int] = int(os.getenv("RANDOM_STATE", 42))
 ENGINE: Final[EngineProtocol] = retrieve_engine(BACKEND, DATABASE)
