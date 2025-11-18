@@ -31,14 +31,6 @@ def fit_lasso_regression(
     return model
 
 
-# def fit_decision_tree_regression(x: np.ndarray, y: np.ndarray,**kwargs) -> Model:
-#     model = DecisionTreeRegressor(
-#         **kwargs
-#     )
-#     model.fit(x, y)
-#     return model
-
-
 def fit_decision_tree_regression(
     x: np.ndarray,
     y: np.ndarray,
@@ -90,9 +82,9 @@ def fit_gbm_regression(
 
 
 def metrics_rsquared(model: Model, x: np.ndarray, y: np.ndarray):
-    y_pred = model.predict(x)
-    print(f"R² (model score): {model.score(x, y):.4f}")
-    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
+    rsquared = model.score(x, y)
+    print(f"R Squared: {rsquared:.4f}")
+    return rsquared
 
 
 def metrics_relative(model: Model, x: np.ndarray, y: np.ndarray):

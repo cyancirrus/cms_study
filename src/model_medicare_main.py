@@ -214,9 +214,9 @@ def structure_data_multivar_with_readmissions_and_demographics(
             """
             SELECT
                 zip_code,
-                msa_personal_income_k  as msa_personal_income_k,
-                msa_population_density  as msa_population_density,
-                msa_per_capita_income  as msa_per_capita_income
+                log(msa_personal_income_k) as msa_personal_income_k,
+                log(msa_population_density)  as msa_population_density,
+                log(msa_per_capita_income)  as msa_per_capita_income
             FROM zip_demographics;
             """,
             conn,
@@ -513,6 +513,7 @@ def plot_delta_scatter(
     plt.close()
 
 
+# 0.2841
 if __name__ == "__main__":
     df = load_data()
     df_read = load_readmissions_scaled()
@@ -528,7 +529,7 @@ if __name__ == "__main__":
     # BEST MODEL CURRENTLY
     model = fit_linear_regression(x_train, y_train)
     # model = fit_decision_tree_regression(x_train, y_train)
-    # model = fit_lasso_regression(x_train, y_train, 1e-9)
+    # model = fit_lasso_regression(x_train, y_train, 1e-4)
 
     print("Metrics on training set:")
     metrics(model, x_train, y_train)

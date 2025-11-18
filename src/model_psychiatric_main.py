@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression, MultiTaskLasso
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
+from train.search import gbm_grid_search
 import matplotlib.pyplot as plt
 
 from train.models import (
@@ -44,7 +45,6 @@ SELECT * FROM ipfqr_quality_measures_facility
 def load_data() -> pd.DataFrame:
     """Load IPFQR facility quality measures."""
     df = ENGINE.exec(QUERY_IPFQR_MEASURES)
-    print(df.head)
     return df
 
 
@@ -144,9 +144,9 @@ def structure_ipfqr_with_demographics(
             """
             SELECT
                 zip_code,
-                msa_personal_income_k  as msa_personal_income_k,
-                msa_population_density  as msa_population_density,
-                msa_per_capita_income  as msa_per_capita_income
+                log(msa_personal_income_k / 100_000) as msa_personal_income_k,
+                log(msa_population_density / 1000_000)  as msa_population_density,
+                log(msa_per_capita_income / 100_000)  as msa_per_capita_income
             FROM zip_demographics;
             """,
             conn,
@@ -156,7 +156,7 @@ def structure_ipfqr_with_demographics(
     for col in [
         "msa_personal_income_k",
         "msa_population_density",
-        "msa_per_capita_income",
+        # "msa_per_capita_income",
     ]:
         mean = df_zip_demo[col].mean()
         std = df_zip_demo[col].std()
@@ -194,7 +194,7 @@ def structure_ipfqr_with_demographics(
                 "submission_year",
                 "msa_personal_income_k",
                 "msa_population_density",
-                "msa_per_capita_income",
+                # "msa_per_capita_income",
             ]
         ],
         on=["facility_id", "submission_year"],
@@ -209,7 +209,7 @@ def structure_ipfqr_with_demographics(
     prev_cols = target_cols + [
         "msa_personal_income_k",
         "msa_population_density",
-        "msa_per_capita_income",
+        # "msa_per_capita_income",
     ]
 
     df_prev = df_prev.rename(
@@ -231,7 +231,7 @@ def structure_ipfqr_with_demographics(
         + [
             "msa_personal_income_k_prev",
             "msa_population_density_prev",
-            "msa_per_capita_income_prev",
+            # "msa_per_capita_income_prev",
         ]
     )
     df_final = df_final.dropna(subset=cols_to_check)
@@ -247,13 +247,17 @@ def structure_ipfqr_with_demographics(
     return x, delta_y, target_cols
 
 
+# 25 km
+# R Squared: 0.1335
+
+
 if __name__ == "__main__":
     df = load_data()
-    x, delta_y, targets = structure_ipfqr_data(df)
+    # x, delta_y, targets = structure_ipfqr_data(df)
+    x, delta_y, targets = structure_ipfqr_with_demographics(df)
 
     print(x.shape)
 
-    raise Exception
     x_train, x_test, y_train, y_test = train_test_split(
         x, delta_y, test_size=0.2, random_state=RANDOM_STATE
     )
@@ -262,14 +266,37 @@ if __name__ == "__main__":
     assert isinstance(x_test, np.ndarray)
     assert isinstance(y_test, np.ndarray)
 
-    model = fit_decision_tree_regression(
+    # model = fit_lasso_regression(x_train, y_train, alpha = 0.6);
+
+    # model = fit_decision_tree_regression(
+    #     x_train,
+    #     y_train,
+    #     max_depth=16,
+    #     min_samples_split=30,
+    #     min_samples_leaf=4,
+    #     random_state=RANDOM_STATE,
+    # )
+
+    # 25 km, 3knn R^2 = 0.1335
+    ## with demographics
+    model = fit_gbm_regression(
         x_train,
         y_train,
-        max_depth=16,
-        min_samples_split=30,
-        min_samples_leaf=4,
+        n_estimators=64,
+        learning_rate=0.05,
+        max_depth=3,
         random_state=RANDOM_STATE,
     )
+    ## without demographics
+    # model = fit_gbm_regression(
+    #     x_train,
+    #     y_train,
+
+    #     n_estimators = 40,
+    #     learning_rate = 0.125,
+    #     max_depth = 2,
+    #     random_state = RANDOM_STATE,
+    # )
 
     print("Metrics on training set:")
     metrics_rsquared(model, x_train, y_train)
@@ -281,3 +308,20 @@ if __name__ == "__main__":
     plot_delta_scatter(
         "./metrics/psychiatric", y_test, delta_pred, targets
     )
+
+    # ## for the scructure base ipfqr
+    # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
+    #     n_estimators_range = [40, 44, 48, 64, 128, 256],
+    #     learning_rate_range = np.linspace(0.05, 0.15, 5),
+    #     max_depth_range = [2, 3],
+    #     # max_depth_range = [2, 5, 6],
+    # )
+
+    ## for the scructure ipfqr with demographics
+    # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
+    #     n_estimators_range = [36, 38, 40, 42, 44],
+    #     learning_rate_range = np.linspace(0.02, 0.10, 5),
+    #     max_depth_range = [2, 3, 4, 5, 6],
+    # )
+
+# )

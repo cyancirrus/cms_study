@@ -10,7 +10,7 @@ def transform_msa_for_demographics(engine: EngineProtocol):
     df_msa_centroids = engine.read(CmsSchema.msa_centroid)
     df_msa_stats = engine.read(CmsSchema.msa_statistics)
     result = zip_to_msa_smoothed(
-        df_zip_lat_long, df_msa_centroids, df_msa_stats, 3
+        df_zip_lat_long, df_msa_centroids, df_msa_stats, 4
     )
     engine.write(result, CmsSchema.zip_demographics)
 
