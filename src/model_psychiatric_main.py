@@ -18,23 +18,20 @@ def load_data() -> pd.DataFrame:
         df = pd.read_sql_query(
             """SELECT * FROM ipfqr_quality_measures_facility
                 WHERE 
-                    hbips2_overall_rate_per_1000 is not NULL
-                    and hbips3_overall_rate_per_1000 is not NULL
-                    and smd_percent is not NULL
-                    and sub2_percent is not NULL
-                    and sub3_percent is not NULL
-                    and tob3_percent is not NULL
-                    and tob3a_percent is not NULL
-                    and tr1_percent is not NULL
-                    and faph7_percent is not NULL
-                    and medcont_percent is not NULL
-                    and readm30_ipf_rate is not NULL
-                    and imm2_percent is not NULL
-
+                    hbips_2_overall_rate_per_1000 IS NOT NULL
+                    AND hbips_3_overall_rate_per_1000 IS NOT NULL
+                    AND smd_percent IS NOT NULL
+                    AND sub_2_percent IS NOT NULL
+                    AND sub_3_percent IS NOT NULL
+                    AND tob_3_percent IS NOT NULL
+                    AND tob_3a_percent IS NOT NULL
+                    AND tr_1_percent IS NOT NULL
+                    AND imm_2_percent IS NOT NULL
+                    AND readm_30_ipf_rate IS NOT NULL
             ;""",
             conn,
         )
-        print(df.head)
+        # print(df.head)
         return df
 
 
@@ -46,17 +43,29 @@ def structure_ipfqr_data(
     using previous-year autoregressive features.
     """
     granularity = ["submission_year", "facility_id"]
-    # Identify all percent columns as targets
-    target_cols = [c for c in df.columns if c.endswith("_percent")]
+    target_cols = [
+        "hbips_2_overall_rate_per_1000",
+        "hbips_3_overall_rate_per_1000",
+        "smd_percent",
+        "sub_2_percent",
+        "sub_3_percent",
+        "tob_3_percent",
+        "tob_3a_percent",
+        "tr_1_percent",
+        "imm_2_percent",
+        "readm_30_ipf_rate",
+    ]
 
     df_perf = df[granularity + target_cols]
-
     # Shift forward to create previous-year features
     df_prev = df_perf.copy()
     df_prev["submission_year"] += 1
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in target_cols}
     )
+    print("df_prev")
+    print(df_prev.shape)
+    print("----------------------------------")
 
     # Merge to get previous-year features
     df_merged = pd.merge(
@@ -65,11 +74,9 @@ def structure_ipfqr_data(
         on=["facility_id", "submission_year"],
         how="inner",
     )
-
     # Drop rows with NaNs in targets or previous-year targets
     cols_to_check = target_cols + [f"{c}_prev" for c in target_cols]
     df_clean = df_merged.dropna(subset=cols_to_check)
-
     # Features: previous-year percent columns
     feature_cols = [f"{c}_prev" for c in target_cols]
 
@@ -129,7 +136,10 @@ def plot_delta_scatter(
 
 if __name__ == "__main__":
     df = load_data()
+    print(df.columns)
+    print(df.shape)
     x, delta_y, targets = structure_ipfqr_data(df)
+    print(x.shape)
 
     x_train, x_test, y_train, y_test = train_test_split(
         x, delta_y, test_size=0.2, random_state=42
