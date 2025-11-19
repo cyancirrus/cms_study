@@ -107,12 +107,6 @@ def extract_cms_data(engine: EngineProtocol, directory: str, year: int):
         CmsSchema.hvbp_tps,
         year,
     )
-    process_table_append_year(
-        engine,
-        f"./{directory}/hvbp_tps.csv",
-        CmsSchema.hvbp_tps,
-        year,
-    )
     print()
 
 

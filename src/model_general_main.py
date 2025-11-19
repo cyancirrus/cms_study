@@ -261,18 +261,7 @@ if __name__ == "__main__":
     assert isinstance(x_test, np.ndarray)
     assert isinstance(y_test, np.ndarray)
 
-    # model = fit_linear_regression(x_train, y_train);
-    # model = fit_lasso_regression(x_train, y_train, alpha = 0.5);
-
-    # # 30 %
-    model = fit_gbm_regression(
-        x_train,
-        y_train,
-        n_estimators=624,
-        learning_rate=0.75,
-        max_depth=3,
-        random_state=RANDOM_STATE,
-    )
+    model = fit_linear_regression(x_train, y_train)
 
     print("Metrics on training set:")
     metrics_rsquared(model, x_train, y_train)
@@ -288,7 +277,6 @@ if __name__ == "__main__":
     #     n_estimators_range = [40, 44, 48, 64, 128, 256],
     #     learning_rate_range = np.linspace(0.05, 0.15, 5),
     #     max_depth_range = [2, 3],
-    #     # max_depth_range = [2, 5, 6],
     # )
 
     # ## for the scructure hvbp_tps with demographics
