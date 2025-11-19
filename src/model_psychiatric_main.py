@@ -12,13 +12,14 @@ from train.search import gbm_grid_search
 import matplotlib.pyplot as plt
 from train.models import (
     plot_delta_scatter,
-    metrics_effective_delta_rsquared,
     metrics_rsquared,
     metrics_relative,
     fit_linear_regression,
-    fit_lasso_regression,
-    fit_decision_tree_regression,
-    fit_gbm_regression,
+    z_transform,
+    # metrics_effective_delta_rsquared,
+    # fit_lasso_regression,
+    # fit_decision_tree_regression,
+    # fit_gbm_regression,
     # fit_random_forest_regression
 )
 
@@ -99,22 +100,6 @@ SELECT
 # tr_1_percent as tr_1_percent,
 # imm_2_percent as imm_2_percent,
 # readm_30_ipf_rate as readm_30_ipf_rate
-
-
-def z_transform(df: pd.DataFrame, col: str):
-    """
-    Z-transform a column in a DataFrame.
-    """
-    mean = df[col].mean()
-    std = df[col].std(ddof=0)  # or ddof=1 if you prefer
-
-    if std == 0 or np.isnan(std):
-        raise Exception
-        z = (df[col] - mean) * 0  # all zeros
-    else:
-        z = (df[col] - mean) / std
-
-    df[col] = z
 
 
 def load_data() -> pd.DataFrame:

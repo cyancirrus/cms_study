@@ -16,9 +16,10 @@ from train.models import (
     metrics_rsquared,
     metrics_relative,
     fit_linear_regression,
-    fit_lasso_regression,
-    fit_decision_tree_regression,
-    fit_gbm_regression,
+    z_transform,
+    # fit_lasso_regression,
+    # fit_decision_tree_regression,
+    # fit_gbm_regression,
     # fit_random_forest_regression
 )
 
@@ -47,6 +48,28 @@ SELECT * FROM hvbp_tps
 def load_data() -> pd.DataFrame:
     """Load IPFQR facility quality measures."""
     df = ENGINE.exec(QUERY_IPFQR_MEASURES)
+    z_transform(
+        df, "unweighted_normalized_clinical_outcomes_domain_score"
+    )
+    z_transform(
+        df, "weighted_normalized_clinical_outcomes_domain_score"
+    )
+    z_transform(
+        df, "unweighted_person_and_community_engagement_domain_score"
+    )
+    z_transform(
+        df, "weighted_person_and_community_engagement_domain_score"
+    )
+    z_transform(df, "unweighted_normalized_safety_domain_score")
+    z_transform(df, "weighted_safety_domain_score")
+    z_transform(
+        df,
+        "unweighted_normalized_efficiency_and_cost_reduction_domain_score",
+    )
+    z_transform(
+        df, "weighted_efficiency_and_cost_reduction_domain_score"
+    )
+    z_transform(df, "total_performance_score")
     return df
 
 

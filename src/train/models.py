@@ -6,7 +6,9 @@ from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import MultiTaskLasso
 from sklearn.multioutput import MultiOutputRegressor
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import r2_score
+
+# from sklearn.metrics import r2_score
+import pandas as pd
 import matplotlib.pyplot as plt
 from typing import Protocol, List
 
@@ -160,3 +162,19 @@ def plot_delta_scatter(
     plt.tight_layout()
     plt.savefig(out_file, dpi=150)
     plt.close()
+
+
+def z_transform(df: pd.DataFrame, col: str):
+    """
+    Z-transform a column in a DataFrame.
+    """
+    mean = df[col].mean()
+    std = df[col].std(ddof=0)  # or ddof=1 if you prefer
+
+    if std == 0 or np.isnan(std):
+        raise Exception
+        z = (df[col] - mean) * 0  # all zeros
+    else:
+        z = (df[col] - mean) / std
+
+    df[col] = z
