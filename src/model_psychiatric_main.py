@@ -10,9 +10,9 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from train.search import gbm_grid_search
 import matplotlib.pyplot as plt
-
 from train.models import (
     plot_delta_scatter,
+    metrics_effective_delta_rsquared,
     metrics_rsquared,
     metrics_relative,
     fit_linear_regression,
@@ -25,12 +25,60 @@ from train.models import (
 DATABASE = "source.db"
 # hbips_2_overall_rate_per_1000 is not NULL
 # and hbips_3_overall_rate_per_1000 is not NULL
+# QUERY_IPFQR_MEASURES: Final[
+#     str
+# ] = """
+# SELECT
+#         submission_year,
+#         facility_id,
+#         hbips_2_overall_rate_per_1000 as hbips_2_overall_rate_per_1000,
+#         hbips_3_overall_rate_per_1000 as hbips_3_overall_rate_per_1000,
+#         log(smd_percent) as smd_percent,
+#         log(sub_2_percent) as sub_2_percent,
+#         log(sub_3_percent) as sub_3_percent,
+#         log(tob_3_percent) as tob_3_percent,
+#         log(tob_3a_percent) as tob_3a_percent,
+#         log(tr_1_percent) as tr_1_percent,
+#         log(imm_2_percent) as imm_2_percent,
+#         log(readm_30_ipf_rate) as readm_30_ipf_rate
+
+#     FROM
+#         ipfqr_quality_measures_facility
+#     WHERE
+#         hbips_2_overall_rate_per_1000 IS NOT NULL
+#         AND hbips_3_overall_rate_per_1000 IS NOT NULL
+#         AND smd_percent IS NOT NULL
+#         AND sub_2_percent IS NOT NULL
+#         AND sub_3_percent IS NOT NULL
+#         AND tob_3_percent IS NOT NULL
+#         AND tob_3a_percent IS NOT NULL
+#         AND tr_1_percent IS NOT NULL
+#         AND imm_2_percent IS NOT NULL
+#         AND readm_30_ipf_rate IS NOT NULL
+# ;"""
 QUERY_IPFQR_MEASURES: Final[
     str
 ] = """
-SELECT * FROM ipfqr_quality_measures_facility
+SELECT
+        submission_year,
+        facility_id,
+        log(1 + hbips_2_overall_rate_per_1000) as hbips_2_overall_rate_per_1000,
+        log(1 + hbips_3_overall_rate_per_1000) as hbips_3_overall_rate_per_1000,
+        log(smd_percent) as smd_percent,
+        log(sub_2_percent) as sub_2_percent,
+        log(sub_3_percent) as sub_3_percent,
+        log(tob_3_percent) as tob_3_percent,
+        log(tob_3a_percent) as tob_3a_percent,
+        log(tr_1_percent) as tr_1_percent,
+        log(imm_2_percent) as imm_2_percent,
+        log(readm_30_ipf_rate) as readm_30_ipf_rate
+    
+    FROM
+        ipfqr_quality_measures_facility
     WHERE 
-        smd_percent IS NOT NULL
+        hbips_2_overall_rate_per_1000 IS NOT NULL
+        AND hbips_3_overall_rate_per_1000 IS NOT NULL
+        AND smd_percent IS NOT NULL
         AND sub_2_percent IS NOT NULL
         AND sub_3_percent IS NOT NULL
         AND tob_3_percent IS NOT NULL
@@ -38,13 +86,49 @@ SELECT * FROM ipfqr_quality_measures_facility
         AND tr_1_percent IS NOT NULL
         AND imm_2_percent IS NOT NULL
         AND readm_30_ipf_rate IS NOT NULL
-
 ;"""
+# submission_year,
+# facility_id,
+# hbips_2_overall_rate_per_1000,
+# hbips_3_overall_rate_per_1000,
+# smd_percent as smd_percent,
+# sub_2_percent as sub_2_percent,
+# sub_3_percent as sub_3_percent,
+# tob_3_percent as tob_3_percent,
+# tob_3a_percent as tob_3a_percent,
+# tr_1_percent as tr_1_percent,
+# imm_2_percent as imm_2_percent,
+# readm_30_ipf_rate as readm_30_ipf_rate
+
+
+def z_transform(df: pd.DataFrame, col: str):
+    """
+    Z-transform a column in a DataFrame.
+    """
+    mean = df[col].mean()
+    std = df[col].std(ddof=0)  # or ddof=1 if you prefer
+
+    if std == 0 or np.isnan(std):
+        raise Exception
+        z = (df[col] - mean) * 0  # all zeros
+    else:
+        z = (df[col] - mean) / std
+
+    df[col] = z
 
 
 def load_data() -> pd.DataFrame:
     """Load IPFQR facility quality measures."""
     df = ENGINE.exec(QUERY_IPFQR_MEASURES)
+    z_transform(df, "hbips_2_overall_rate_per_1000")
+    z_transform(df, "hbips_3_overall_rate_per_1000")
+    z_transform(df, "smd_percent")
+    z_transform(df, "sub_2_percent")
+    z_transform(df, "sub_3_percent")
+    z_transform(df, "tob_3_percent")
+    z_transform(df, "tob_3a_percent")
+    z_transform(df, "tr_1_percent")
+    z_transform(df, "readm_30_ipf_rate")
     return df
 
 
@@ -58,8 +142,8 @@ def structure_ipfqr_data(
     granularity = ["submission_year", "facility_id"]
     # Identify all percent columns as targets
     target_cols = [
-        # "hbips_2_overall_rate_per_1000",
-        # "hbips_3_overall_rate_per_1000",
+        "hbips_2_overall_rate_per_1000",
+        "hbips_3_overall_rate_per_1000",
         "smd_percent",
         "sub_2_percent",
         "sub_3_percent",
@@ -97,13 +181,12 @@ def structure_ipfqr_data(
     x = df_clean[feature_cols].values
     y = df_clean[target_cols].values
     delta_y = y - df_clean[[f"{c}_prev" for c in target_cols]].values
-
     return x, delta_y, target_cols
 
 
 def structure_ipfqr_with_demographics(
     df: pd.DataFrame, db_path: str = DATABASE
-) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+):
     """
     Prepare feature matrix X and target delta_y for IPFQR data,
     using previous-year autoregressive features plus zip demographics.
@@ -116,8 +199,8 @@ def structure_ipfqr_with_demographics(
 
     # Core metrics you know are non-null (aligned with SQL WHERE)
     target_cols = [
-        # "hbips_2_overall_rate_per_1000",
-        # "hbips_3_overall_rate_per_1000",
+        "hbips_2_overall_rate_per_1000",
+        "hbips_3_overall_rate_per_1000",
         "smd_percent",
         "sub_2_percent",
         "sub_3_percent",
@@ -144,9 +227,9 @@ def structure_ipfqr_with_demographics(
             """
             SELECT
                 zip_code,
-                log(msa_personal_income_k / 100_000) as msa_personal_income_k,
-                log(msa_population_density / 1000_000)  as msa_population_density,
-                log(msa_per_capita_income / 100_000)  as msa_per_capita_income
+                log(msa_personal_income_k) as msa_personal_income_k,
+                log(msa_population_density)  as msa_population_density,
+                log(msa_per_capita_income)  as msa_per_capita_income
             FROM zip_demographics;
             """,
             conn,
@@ -156,7 +239,7 @@ def structure_ipfqr_with_demographics(
     for col in [
         "msa_personal_income_k",
         "msa_population_density",
-        # "msa_per_capita_income",
+        "msa_per_capita_income",
     ]:
         mean = df_zip_demo[col].mean()
         std = df_zip_demo[col].std()
@@ -244,7 +327,151 @@ def structure_ipfqr_with_demographics(
     # deltas relative to previous-year target values
     delta_y = y - df_final[[f"{c}_prev" for c in target_cols]].values
 
-    return x, delta_y, target_cols
+    return x, y, target_cols, delta_y
+
+
+def structure_ipfqr_double_diff(
+    df: pd.DataFrame, db_path: str = DATABASE
+):
+    """
+    Prepare features for double-difference model:
+        Δy_{t+1} = f(Δy_t, prev_demographics)
+    Returns:
+        x: previous delta + demographics features
+        y: current delta target
+        target_delta_cols: list of target delta column names
+    """
+
+    import sqlite3
+    import pandas as pd
+    import numpy as np
+
+    granularity = ["submission_year", "facility_id"]
+    target_cols = [
+        "hbips_2_overall_rate_per_1000",
+        "hbips_3_overall_rate_per_1000",
+        "smd_percent",
+        "sub_2_percent",
+        "sub_3_percent",
+        "tob_3_percent",
+        "tob_3a_percent",
+        "tr_1_percent",
+        "imm_2_percent",
+        "readm_30_ipf_rate",
+    ]
+
+    # --- load demographics ---
+    with sqlite3.connect(db_path) as conn:
+        df_fac_zip = pd.read_sql_query(
+            "SELECT submission_year, facility_id, zip_code FROM facility_zip_code;",
+            conn,
+        )
+        df_zip_demo = pd.read_sql_query(
+            """
+            SELECT zip_code,
+                log(msa_personal_income_k) as msa_personal_income_k,
+                log(msa_population_density) as msa_population_density,
+                log(msa_per_capita_income) as msa_per_capita_income
+            FROM zip_demographics;
+            """,
+            conn,
+        )
+
+    # z-score normalize
+    for col in [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]:
+        df_zip_demo[col] = (
+            df_zip_demo[col] - df_zip_demo[col].mean()
+        ) / df_zip_demo[col].std()
+
+    # merge facility -> zip -> demo
+    df_fac_zip["submission_year"] = df_fac_zip[
+        "submission_year"
+    ].astype(int)
+    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
+    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
+    df_zip = pd.merge(
+        df_fac_zip, df_zip_demo, on="zip_code", how="left"
+    )
+
+    # --- merge performance data with demographics ---
+    df_perf = df[granularity + target_cols]
+    df_merged = pd.merge(
+        df_perf,
+        df_zip[
+            [
+                "facility_id",
+                "submission_year",
+                "msa_personal_income_k",
+                "msa_population_density",
+            ]
+        ],
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    # --- compute first difference delta_y_t = y_t - y_{t-1} ---
+    df_prev = df_merged.copy()
+    df_prev["submission_year"] += 1
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in target_cols}
+    )
+
+    df_delta = pd.merge(
+        df_merged,
+        df_prev[
+            ["facility_id", "submission_year"]
+            + [f"{c}_prev" for c in target_cols]
+        ],
+        on=["facility_id", "submission_year"],
+        how="inner",
+    )
+
+    for c in target_cols:
+        df_delta[f"{c}_delta"] = df_delta[c] - df_delta[f"{c}_prev"]
+
+    # --- compute double difference: previous delta features ---
+    delta_cols = [f"{c}_delta" for c in target_cols]
+    df_prev_delta = df_delta[
+        ["facility_id", "submission_year"]
+        + delta_cols
+        + ["msa_personal_income_k", "msa_population_density"]
+    ].copy()
+    df_prev_delta["submission_year"] += 1
+
+    # rename previous delta columns for features
+    df_prev_delta = df_prev_delta.rename(
+        columns={c: f"{c}_prev" for c in delta_cols}
+    )
+
+    # merge back to get x (prev delta + current demo) and y (current delta)
+    df_final = pd.merge(
+        df_delta,
+        df_prev_delta,
+        on=[
+            "facility_id",
+            "submission_year",
+            "msa_personal_income_k",
+            "msa_population_density",
+        ],
+        how="inner",
+    )
+
+    # drop any remaining NaNs
+    feature_cols = [f"{c}_prev" for c in target_cols] + [
+        "msa_personal_income_k",
+        "msa_population_density",
+    ]
+    target_delta_cols = [f"{c}_delta" for c in target_cols]
+    df_final = df_final.dropna(subset=feature_cols + target_delta_cols)
+
+    x = df_final[feature_cols].values
+    y = df_final[target_delta_cols].values
+
+    return x, y, target_delta_cols
 
 
 # 25 km
@@ -253,11 +480,11 @@ def structure_ipfqr_with_demographics(
 
 if __name__ == "__main__":
     df = load_data()
+
     # x, delta_y, targets = structure_ipfqr_data(df)
-    x, delta_y, targets = structure_ipfqr_with_demographics(df)
 
-    print(x.shape)
-
+    x, y, targets, delta_y = structure_ipfqr_with_demographics(df)
+    # x, delta_y, targets = structure_ipfqr_double_diff(df)
     x_train, x_test, y_train, y_test = train_test_split(
         x, delta_y, test_size=0.2, random_state=RANDOM_STATE
     )
@@ -266,7 +493,8 @@ if __name__ == "__main__":
     assert isinstance(x_test, np.ndarray)
     assert isinstance(y_test, np.ndarray)
 
-    # model = fit_lasso_regression(x_train, y_train, alpha = 0.6);
+    model = fit_linear_regression(x_train, y_train)
+    # model = fit_lasso_regression(x_train, y_train, alpha = 0.06);
 
     # model = fit_decision_tree_regression(
     #     x_train,
@@ -277,26 +505,26 @@ if __name__ == "__main__":
     #     random_state=RANDOM_STATE,
     # )
 
-    # 25 km, 3knn R^2 = 0.1335
-    ## with demographics
-    model = fit_gbm_regression(
-        x_train,
-        y_train,
-        n_estimators=64,
-        learning_rate=0.05,
-        max_depth=3,
-        random_state=RANDOM_STATE,
-    )
-    ## without demographics
     # model = fit_gbm_regression(
     #     x_train,
     #     y_train,
-
-    #     n_estimators = 40,
-    #     learning_rate = 0.125,
-    #     max_depth = 2,
-    #     random_state = RANDOM_STATE,
+    #     n_estimators=96,
+    #     learning_rate=0.075,
+    #     max_depth=3,
+    #     random_state=RANDOM_STATE,
     # )
+    # # n_estimators=64, learning_rate=0.094, max_depth=3
+
+    # ## without demographics
+    # # model = fit_gbm_regression(
+    # #     x_train,
+    # #     y_train,
+
+    # #     n_estimators = 40,
+    # #     learning_rate = 0.125,
+    # #     max_depth = 2,
+    # #     random_state = RANDOM_STATE,
+    # # )
 
     print("Metrics on training set:")
     metrics_rsquared(model, x_train, y_train)
@@ -304,24 +532,23 @@ if __name__ == "__main__":
     metrics_rsquared(model, x_test, y_test)
     metrics_relative(model, x_test, y_test)
 
+    # # NOTE: must use this if not going to delta y the model
+    # metrics_effective_delta_rsquared(model, x_test, y_test, delta_y)
+
     delta_pred = model.predict(x_test)
     plot_delta_scatter(
         "./metrics/psychiatric", y_test, delta_pred, targets
     )
+    # # # ## for the scructure ipfqr with demographics
+    # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
+    #     n_estimators_range = [24, 48, 64, 128],
+    #     learning_rate_range = np.linspace(0.05, 0.15, 4),
+    #     max_depth_range = [3],
+    # )
 
     # ## for the scructure base ipfqr
-    # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
-    #     n_estimators_range = [40, 44, 48, 64, 128, 256],
-    #     learning_rate_range = np.linspace(0.05, 0.15, 5),
-    #     max_depth_range = [2, 3],
-    #     # max_depth_range = [2, 5, 6],
-    # )
-
-    ## for the scructure ipfqr with demographics
-    # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
-    #     n_estimators_range = [36, 38, 40, 42, 44],
-    #     learning_rate_range = np.linspace(0.02, 0.10, 5),
-    #     max_depth_range = [2, 3, 4, 5, 6],
-    # )
-
-# )
+    # # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
+    # #     n_estimators_range = [16, 32, 42, 64],
+    # #     learning_rate_range = np.linspace(0.02, 0.10, 4),
+    # #     max_depth_range = [2, 3],
+    # # )

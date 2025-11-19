@@ -149,20 +149,33 @@ AND readm_30_ipf_rate IS NOT NULL
 
 
 
+// either filter to 2024 & 2025 or just use these measures
+sum(unweighted_normalized_clinical_outcomes_domain_score IS NOT NULL),
+sum(weighted_normalized_clinical_outcomes_domain_score IS NOT NULL),
+
+// this data exists for 2023
+sum(unweighted_normalized_efficiency_and_cost_reduction_domain_score IS NOT NULL),
+sum(weighted_efficiency_and_cost_reduction_domain_score IS NOT NULL),
+
+
 SELECT
     submission_year,
-    sum(hbips_2_overall_rate_per_1000 IS NOT NULL) AS hbips2_count,
-    sum(hbips_3_overall_rate_per_1000 IS NOT NULL) AS hbips3_count,
-    sum(smd_percent IS NOT NULL) AS smd_count,
-    sum(sub_2_percent IS NOT NULL) AS sub2_count,
-    sum(sub_3_percent IS NOT NULL) AS sub3_count,
-    sum(tob_3_percent IS NOT NULL) AS tob3_count,
-    sum(tob_3a_percent IS NOT NULL) AS tob3a_count,
-    sum(tr_1_percent IS NOT NULL) AS tr1_count,
-    sum(imm_2_percent IS NOT NULL) AS imm2_count,
-    sum(readm_30_ipf_rate IS NOT NULL) AS readm30_count
+    sum(unweighted_normalized_clinical_outcomes_domain_score IS NOT NULL),
+    sum(weighted_normalized_clinical_outcomes_domain_score IS NOT NULL),
+
+    sum(unweighted_person_and_community_engagement_domain_score IS NOT NULL),
+    sum(weighted_person_and_community_engagement_domain_score IS NOT NULL),
+
+    sum(unweighted_normalized_safety_domain_score IS NOT NULL),
+    sum(weighted_safety_domain_score IS NOT NULL),
+
+    sum(unweighted_normalized_efficiency_and_cost_reduction_domain_score IS NOT NULL),
+    sum(weighted_efficiency_and_cost_reduction_domain_score IS NOT NULL),
+
+    sum(total_performance_score IS NOT NULL)
+    
 FROM
-    ipfqr_quality_measures_facility
+    hvbp_tps
 GROUP BY
     submission_year
 ;

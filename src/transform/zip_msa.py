@@ -40,7 +40,6 @@ def zip_to_msa_smoothed(
     msa_centroids: pd.DataFrame,
     msa_stats: pd.DataFrame,
     k: int,
-    # sigma_km: float = 25.0,
     sigma_km: float = 12.0,
 ) -> pd.DataFrame:
     # Ensure cbsafp is int

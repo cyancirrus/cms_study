@@ -166,6 +166,33 @@ def report_filter_complications_and_deaths_hospital(
     )
 
 
+def report_hvbp_tps(database: str, year: int):
+    """Draw report histograms for HVBP TPS measures."""
+    output_file: str = (
+        "./visualizations/ipfqr_quality_measures_facility"
+    )
+
+    measures: list[str] = [
+        "hbips_2_overall_rate_per_1000",
+        "hbips_3_overall_rate_per_1000",
+        "smd_percent",
+        "sub_2_percent",
+        "sub_3_percent",
+        "tob_3_percent",
+        "tob_3a_percent",
+        "tr_1_percent",
+        "imm_2_percent",
+        "readm_30_ipf_rate",
+    ]
+    draw_summary(
+        database,
+        year,
+        output_file,
+        "ipfqr_quality_measures_facility",
+        measures,
+    )
+
+
 def report_zeroized_general_hospital_by_state(database: str, year: int):
     output_file: str = (
         "./visualizations/zeroized_hospital_general_information_state"

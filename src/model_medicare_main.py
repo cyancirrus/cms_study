@@ -540,20 +540,6 @@ if __name__ == "__main__":
 
     delta_pred = model.predict(x_test)
     delta_true = y_test
-
-    print(
-        "Δy true min/max/mean:",
-        delta_true.min(),
-        delta_true.max(),
-        delta_true.mean(),
-    )
-    print(
-        "Δy predicted min/max/mean:",
-        delta_pred.min(),
-        delta_pred.max(),
-        delta_pred.mean(),
-    )
-
     target_names = [
         "mort_30_ami_performance_rate",
         "mort_30_hf_performance_rate",

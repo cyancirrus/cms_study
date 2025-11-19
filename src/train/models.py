@@ -93,6 +93,47 @@ def metrics_relative(model: Model, x: np.ndarray, y: np.ndarray):
     print(f"Relative MAE: {mae_rel:.4f}")
 
 
+def metrics_effective_delta_rsquared(
+    model: Model,
+    x: np.ndarray,
+    y_t: np.ndarray,
+    delta_y: np.ndarray,
+) -> float:
+    """
+    Compute an 'effective' R^2 on the delta implied by a level model.
+
+    Uses:
+        R^2_level = model.score(x, y_t)
+        v = Var(y_t)
+        c = Var(delta_y)
+
+    and returns:
+        R^2_delta_eff = 1 - (1 - R^2_level) * v / c
+    """
+    # Level R^2 from the model
+    r2_level = model.score(x, y_t)
+
+    # Variances
+    v = np.var(y_t, ddof=0)  # Var(x_t)
+    c = np.var(delta_y, ddof=0)  # Var(x_t - x_{t-1})
+
+    print(f"Variance for y_t: {v}")
+    print(f"Variacne for del y_t: {c}")
+
+    if c == 0:
+        # No variance in delta: can't define an R^2 on the delta sensibly
+        print("Effective delta R^2: c (Var(delta)) == 0, returning NaN")
+        return float("nan")
+
+    r2_delta_eff = float(1 - (1 - r2_level) * (v / c))
+
+    print(f"Level R^2: {r2_level:.4f}")
+    print(f"Var(level): {v:.6f}, Var(delta): {c:.6f}")
+    print(f"Effective R^2 on delta (scaled): {r2_delta_eff:.4f}")
+
+    return r2_delta_eff
+
+
 def plot_delta_scatter(
     out_file: str,
     y_true: np.ndarray,
