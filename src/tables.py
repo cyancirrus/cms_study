@@ -26,3 +26,6 @@ class CmsSchema(Enum):
     msa_statistics                                     = "msa_statistics"
     zip_lat_long                                       = "zip_lat_long"
     zip_demographics                                   = "zip_demographics"
+    # predictions
+    prediction_hvbp_tps                                = "prediction_hvbp_tps"
+    prediction_hvbp_clinical_outcomes                  = "prediction_hvbp_clinical_outcomes"

@@ -1,42 +1,28 @@
 from __future__ import annotations
 import sqlite3
 from typing import List, Protocol, Tuple
+from initialize_environment import RANDOM_STATE, ENGINE
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import (
-    LinearRegression,
-    MultiTaskLasso,
-)
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.ensemble import (
-    RandomForestRegressor,
-    GradientBoostingRegressor,
-)
-from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
-
-DATABASE = "source.db"
-
-
-class Model(Protocol):
-    def fit(self, X: np.ndarray, y: np.ndarray) -> Model: ...
-    def predict(self, X: np.ndarray) -> np.ndarray: ...
-    def score(self, X: np.ndarray, y: np.ndarray) -> float: ...
+from tables import CmsSchema
+from train.models import (
+    plot_delta_scatter,
+    metrics_rsquared,
+    metrics_relative,
+    fit_linear_regression,
+    # fit_lasso_regression,
+    # fit_decision_tree_regression,
+    # fit_gbm_regression,
+    # fit_random_forest_regression
+)
 
 
 def load_data() -> pd.DataFrame:
     """Load all hospital clinical outcomes."""
-    with sqlite3.connect(DATABASE) as conn:
-        return pd.read_sql_query(
-            """
-            SELECT *
-                FROM hvbp_clinical_outcomes
-        ;""",
-            conn,
-        )
-        # state = "IL"
+    return ENGINE.read(CmsSchema.hvbp_clinical_outcomes)
 
 
 def load_readmissions_scaled() -> pd.DataFrame:
@@ -53,20 +39,52 @@ def load_readmissions_scaled() -> pd.DataFrame:
     ;
      """
     # measure_name = "READM-30-AMI-HRRP"
-    with sqlite3.connect(DATABASE) as conn:
-        df = pd.read_sql_query(query, conn)
+    df = ENGINE.exec(query)
 
-    df = df.rename(columns={"submission_year": "fiscal_year"})
+    df = df.rename(columns={"submission_year": "submission_year"})
     df["predicted_readmission_rate"] /= 1_000
     df["expected_readmission_rate"] /= 1_000
     return df
+
+
+def structure_data_ar(
+    df: pd.DataFrame,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Prepare autoregressive features for a single target (AMI)."""
+    performance_cols = [
+        c for c in df.columns if "performance_rate" in c
+    ]
+    df_perf = df[["facility_id", "submission_year"] + performance_cols]
+
+    df_prev = df_perf.copy()
+    df_prev["submission_year"] += 1
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in performance_cols}
+    )
+
+    df_merged = pd.merge(
+        df_perf,
+        df_prev,
+        on=["facility_id", "submission_year"],
+        how="inner",
+    )
+
+    cols_to_check = [
+        "mort_30_ami_performance_rate",
+        "mort_30_ami_performance_rate_prev",
+    ]
+    df_clean = df_merged.dropna(subset=cols_to_check)
+
+    x = df_clean[["mort_30_ami_performance_rate_prev"]].values
+    y = df_clean["mort_30_ami_performance_rate"].values
+    return x, y
 
 
 def structure_data_multivar_with_readmissions(
     df: pd.DataFrame, df_read: pd.DataFrame
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Prepare feature matrix X and target delta_y without leakage."""
-    granularity = ["fiscal_year", "facility_id"]
+    granularity = ["submission_year", "facility_id"]
 
     # All columns to consider as features
     dimensions = [
@@ -111,16 +129,16 @@ def structure_data_multivar_with_readmissions(
     df_merged = pd.merge(
         df,
         df_read,
-        on=["facility_id", "fiscal_year"],
+        on=["facility_id", "submission_year"],
         how="left",
     )
 
     # Shift FORWARD to get previous year's data
     df_prev = df_merged.copy()
-    df_prev["fiscal_year"] -= 1
+    df_prev["submission_year"] += 1
 
     prev_cols = dimensions + list(
-        df_read.columns.difference(["facility_id", "fiscal_year"])
+        df_read.columns.difference(["facility_id", "submission_year"])
     )
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in prev_cols}
@@ -130,7 +148,7 @@ def structure_data_multivar_with_readmissions(
     df_final = pd.merge(
         df_merged,
         df_prev,
-        on=["facility_id", "fiscal_year"],
+        on=["facility_id", "submission_year"],
         how="inner",
     )
 
@@ -150,179 +168,11 @@ def structure_data_multivar_with_readmissions(
     return x, delta_y
 
 
-def structure_data_multivar_with_readmissions_and_demographics(
-    df: pd.DataFrame, df_read: pd.DataFrame, db_path: str = DATABASE
-) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    Prepare feature matrix X and target delta_y without leakage,
-    including facility-level zip demographics.
-    """
-    granularity = ["fiscal_year", "facility_id"]
-
-    # All columns to consider as features (same as your original)
-    dimensions = [
-        # New metrics
-        "mort_30_ami_achievement_threshold",
-        "mort_30_ami_benchmark",
-        "mort_30_hf_achievement_threshold",
-        "mort_30_hf_benchmark",
-        "mort_30_pn_achievement_threshold",
-        "mort_30_pn_benchmark",
-        "mort_30_copd_achievement_threshold",
-        "mort_30_copd_benchmark",
-        "mort_30_cabg_achievement_threshold",
-        "mort_30_cabg_benchmark",
-        "comp_hip_knee_achievement_threshold",
-        "comp_hip_knee_benchmark",
-        # Prior metrics
-        "mort_30_ami_baseline_rate",
-        "mort_30_ami_performance_rate",
-        "mort_30_hf_baseline_rate",
-        "mort_30_hf_performance_rate",
-        "mort_30_pn_baseline_rate",
-        "mort_30_pn_performance_rate",
-        "mort_30_copd_baseline_rate",
-        "mort_30_copd_performance_rate",
-        "mort_30_cabg_baseline_rate",
-        "mort_30_cabg_performance_rate",
-        "comp_hip_knee_baseline_rate",
-        "comp_hip_knee_performance_rate",
-    ]
-
-    target = [
-        "mort_30_ami_performance_rate",
-        "mort_30_hf_performance_rate",
-        "mort_30_pn_performance_rate",
-        "mort_30_copd_performance_rate",
-        "mort_30_cabg_performance_rate",
-        "comp_hip_knee_performance_rate",
-    ]
-
-    # --- load facility_zip_code + zip_demographics ---
-    with sqlite3.connect(db_path) as conn:
-        df_fac_zip = pd.read_sql_query(
-            """
-            SELECT
-                submission_year AS fiscal_year,
-                facility_id,
-                zip_code
-            FROM facility_zip_code;
-            """,
-            conn,
-        )
-        df_zip_demo = pd.read_sql_query(
-            """
-            SELECT
-                zip_code,
-                log(msa_personal_income_k) as msa_personal_income_k,
-                log(msa_population_density)  as msa_population_density,
-                log(msa_per_capita_income)  as msa_per_capita_income
-            FROM zip_demographics;
-            """,
-            conn,
-        )
-    for col in [
-        "msa_personal_income_k",
-        "msa_population_density",
-        "msa_per_capita_income",
-    ]:
-        mean = df_zip_demo[col].mean()
-        std = df_zip_demo[col].std()
-        df_zip_demo[col] = (df_zip_demo[col] - mean) / std
-
-    # normalize dtypes for join keys
-    df["facility_id"] = df["facility_id"]
-    df["fiscal_year"] = df["fiscal_year"].astype("int64")
-
-    df_read["facility_id"] = df_read["facility_id"]
-    df_read["fiscal_year"] = df_read["fiscal_year"].astype("int64")
-
-    df_fac_zip["facility_id"] = df_fac_zip["facility_id"]
-    df_fac_zip["fiscal_year"] = df_fac_zip["fiscal_year"].astype(
-        "int64"
-    )
-    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
-
-    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
-
-    # facility-year -> zip-year -> demographics
-    df_zip = pd.merge(
-        df_fac_zip, df_zip_demo, on="zip_code", how="left"
-    )
-
-    # --- Merge with readmissions data (same as original) ---
-    df_merged = pd.merge(
-        df,
-        df_read,
-        on=["facility_id", "fiscal_year"],
-        how="left",
-    )
-
-    # --- Add current-year demographics (these will get shifted to prev) ---
-    df_merged = pd.merge(
-        df_merged,
-        df_zip[
-            [
-                "facility_id",
-                "fiscal_year",
-                "msa_personal_income_k",
-                "msa_population_density",
-                "msa_per_capita_income",
-            ]
-        ],
-        on=["facility_id", "fiscal_year"],
-        how="left",
-    )
-
-    # Shift FORWARD to get previous year's data
-    df_prev = df_merged.copy()
-    df_prev["fiscal_year"] -= 1
-
-    # prev_cols = clinical dims + readmission cols + demo cols
-    prev_cols = (
-        dimensions
-        + list(
-            df_read.columns.difference(["facility_id", "fiscal_year"])
-        )
-        + [
-            "msa_personal_income_k",
-            "msa_population_density",
-            "msa_per_capita_income",
-        ]
-    )
-
-    df_prev = df_prev.rename(
-        columns={c: f"{c}_prev" for c in prev_cols}
-    )
-
-    # Now current year row gets actual previous year's features
-    df_final = pd.merge(
-        df_merged,
-        df_prev,
-        on=["facility_id", "fiscal_year"],
-        how="inner",
-    )
-
-    # Drop rows with NaNs in any required columns
-    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
-    df_final = df_final.dropna(subset=cols_to_check)
-
-    # Features: all previous-year cols (clinical + readm + demos)
-    prev_feature_cols = prev_cols
-    feature_cols = [f"{c}_prev" for c in prev_feature_cols]
-
-    x = df_final[feature_cols].values
-    y = df_final[target].values
-    delta_y = y - df_final[[f"{c}_prev" for c in target]].values
-
-    return x, delta_y
-
-
 def structure_data_multivar(
     df: pd.DataFrame,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Prepare multivariate features and delta targets without leakage."""
-    granularity = ["fiscal_year", "facility_id"]
+    granularity = ["submission_year", "facility_id"]
 
     dimensions = [
         # New metrics
@@ -365,14 +215,14 @@ def structure_data_multivar(
     df_perf = df[granularity + dimensions]
 
     df_prev = df_perf.copy()
-    df_prev["fiscal_year"] += 1
+    df_prev["submission_year"] += 1
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in dimensions}
     )
     df_merged = pd.merge(
         df_perf,
         df_prev,
-        on=["facility_id", "fiscal_year"],
+        on=["facility_id", "submission_year"],
         how="inner",
     )
 
@@ -392,125 +242,315 @@ def structure_data_multivar(
     return x, delta_y
 
 
-def structure_data_ar(
+def structure_data_multivar_with_readmissions_and_demographics_full(
     df: pd.DataFrame,
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Prepare autoregressive features for a single target (AMI)."""
-    performance_cols = [
-        c for c in df.columns if "performance_rate" in c
-    ]
-    df_perf = df[["facility_id", "fiscal_year"] + performance_cols]
+    df_read: pd.DataFrame,
+) -> Tuple[pd.DataFrame, List[str]]:
+    """
+    Build the full panel df_final with current-year + previous-year
+    clinical/readmission/demo features, plus targets.
+    """
+    granularity = ["submission_year", "facility_id"]
 
-    df_prev = df_perf.copy()
-    df_prev["fiscal_year"] += 1
-    df_prev = df_prev.rename(
-        columns={c: f"{c}_prev" for c in performance_cols}
+    dimensions = [
+        # New metrics
+        "mort_30_ami_achievement_threshold",
+        "mort_30_ami_benchmark",
+        "mort_30_hf_achievement_threshold",
+        "mort_30_hf_benchmark",
+        "mort_30_pn_achievement_threshold",
+        "mort_30_pn_benchmark",
+        "mort_30_copd_achievement_threshold",
+        "mort_30_copd_benchmark",
+        "mort_30_cabg_achievement_threshold",
+        "mort_30_cabg_benchmark",
+        "comp_hip_knee_achievement_threshold",
+        "comp_hip_knee_benchmark",
+        # Prior metrics
+        "mort_30_ami_baseline_rate",
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_baseline_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_baseline_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_baseline_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_baseline_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_baseline_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    target = [
+        "mort_30_ami_performance_rate",
+        "mort_30_hf_performance_rate",
+        "mort_30_pn_performance_rate",
+        "mort_30_copd_performance_rate",
+        "mort_30_cabg_performance_rate",
+        "comp_hip_knee_performance_rate",
+    ]
+
+    # --- load facility_zip_code + zip_demographics ---
+    df_fac_zip = ENGINE.exec(
+        """
+        SELECT
+            submission_year AS submission_year,
+            facility_id,
+            zip_code
+        FROM facility_zip_code;
+        """,
+    )
+    df_zip_demo = ENGINE.exec(
+        """
+        SELECT
+            zip_code,
+            log(msa_personal_income_k) as msa_personal_income_k,
+            log(msa_population_density)  as msa_population_density,
+            log(msa_per_capita_income)  as msa_per_capita_income
+        FROM zip_demographics;
+        """,
     )
 
+    for col in [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]:
+        mean = df_zip_demo[col].mean()
+        std = df_zip_demo[col].std()
+        df_zip_demo[col] = (df_zip_demo[col] - mean) / std
+
+    # normalize dtypes for join keys
+    df["facility_id"] = df["facility_id"]
+    df["submission_year"] = df["submission_year"].astype("int64")
+
+    df_read["facility_id"] = df_read["facility_id"]
+    df_read["submission_year"] = df_read["submission_year"].astype(
+        "int64"
+    )
+
+    df_fac_zip["facility_id"] = df_fac_zip["facility_id"]
+    df_fac_zip["submission_year"] = df_fac_zip[
+        "submission_year"
+    ].astype("int64")
+    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
+
+    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
+
+    # facility-year -> zip-year -> demographics
+    df_zip = pd.merge(
+        df_fac_zip, df_zip_demo, on="zip_code", how="left"
+    )
+
+    # --- Merge with readmissions data ---
     df_merged = pd.merge(
-        df_perf,
+        df,
+        df_read,
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    # --- Add current-year demographics (these will get shifted to prev) ---
+    df_merged = pd.merge(
+        df_merged,
+        df_zip[
+            [
+                "facility_id",
+                "submission_year",
+                "msa_personal_income_k",
+                "msa_population_density",
+                "msa_per_capita_income",
+            ]
+        ],
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    # ---------- IMPORTANT: define what “prev” means ----------
+
+    # We want df_final row at year t to contain:
+    #   - current targets y_t
+    #   - prev features from year t-1
+    #
+    # So we take df_merged (year t-1) and make its submission_year = t
+    # so that it joins onto df_merged at t.
+    df_prev = df_merged.copy()
+    df_prev["submission_year"] += 1  # t-1 -> t
+
+    prev_cols = (
+        dimensions
+        + list(
+            df_read.columns.difference(
+                ["facility_id", "submission_year"]
+            )
+        )
+        + [
+            "msa_personal_income_k",
+            "msa_population_density",
+            "msa_per_capita_income",
+        ]
+    )
+
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in prev_cols}
+    )
+
+    # For each (facility, t), attach previous-year features (t-1)
+    df_final = pd.merge(
+        df_merged,
         df_prev,
-        on=["facility_id", "fiscal_year"],
+        on=["facility_id", "submission_year"],
         how="inner",
     )
 
-    cols_to_check = [
-        "mort_30_ami_performance_rate",
-        "mort_30_ami_performance_rate_prev",
-    ]
-    df_clean = df_merged.dropna(subset=cols_to_check)
+    # Drop rows with NaNs in any required columns
+    cols_to_check = target + [f"{c}_prev" for c in prev_cols]
+    df_final = df_final.dropna(subset=cols_to_check)
 
-    x = df_clean[["mort_30_ami_performance_rate_prev"]].values
-    y = df_clean["mort_30_ami_performance_rate"].values
-    return x, y
+    return df_final, target
 
 
-def fit_linear_regression(x: np.ndarray, y: np.ndarray) -> Model:
-    model = LinearRegression()
-    model.fit(x, y)
-    return model
-
-
-def fit_lasso_regression(
-    x: np.ndarray, y: np.ndarray, alpha: float
-) -> MultiTaskLasso:
-    model = MultiTaskLasso(alpha=alpha, max_iter=1_000)
-    model.fit(x, y)
-    return model
-
-
-def fit_decision_tree_regression(
-    x: np.ndarray, y: np.ndarray
-) -> DecisionTreeRegressor:
-    # model = DecisionTreeRegressor()
-    # model = DecisionTreeRegressor(
-    #     max_depth=24,
-    #     min_samples_split=2,
-    #     min_samples_leaf=16,
-    #     random_state=42,
-    # )
-    # model = DecisionTreeRegressor()
-    model = RandomForestRegressor(1_000)
-    # model = GradientBoostingRegressor()
-    model.fit(x, y)
-    return model
-
-
-def metrics(model: Model, x: np.ndarray, y: np.ndarray) -> None:
-    y_pred = model.predict(x)
-    print(f"R² (model score): {model.score(x, y):.4f}")
-    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
-
-
-def metrics_relative(
-    model: Model, x: np.ndarray, y: np.ndarray
-) -> None:
-    y_pred = model.predict(x)
-    mae_rel = np.mean(np.abs(y - y_pred)) / np.mean(np.abs(y))
-    print(f"R² (model score): {model.score(x, y):.4f}")
-    print(f"R² (manual r2_score): {r2_score(y, y_pred):.4f}")
-    print(f"Relative MAE: {mae_rel:.4f}")
-
-
-def plot_delta_scatter(
-    y_true: np.ndarray,
-    y_pred: np.ndarray,
-    target_names: List[str],
-) -> None:
-    n_targets = y_true.shape[1]
-    ncols = 3
-    nrows = int(np.ceil(n_targets / ncols))
-
-    fig, axes = plt.subplots(
-        nrows=nrows,
-        ncols=ncols,
-        figsize=(5 * ncols, 4 * nrows),
+# NEW
+def structure_data_multivar_with_readmissions_and_demographics(
+    df: pd.DataFrame,
+    df_read: pd.DataFrame,
+) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+    df_final, target = (
+        structure_data_multivar_with_readmissions_and_demographics_full(
+            df, df_read
+        )
     )
-    axes = axes.flatten()
-
-    for i, ax in enumerate(axes):
-        if i >= n_targets:
-            ax.axis("off")
-            continue
-        ax.scatter(y_true[:, i], y_pred[:, i], alpha=0.6)
-        min_val, max_val = (
-            y_true[:, i].min(),
-            y_true[:, i].max(),
+    prev_cols = (
+        [
+            # same dimensions as before
+            "mort_30_ami_achievement_threshold",
+            "mort_30_ami_benchmark",
+            "mort_30_hf_achievement_threshold",
+            "mort_30_hf_benchmark",
+            "mort_30_pn_achievement_threshold",
+            "mort_30_pn_benchmark",
+            "mort_30_copd_achievement_threshold",
+            "mort_30_copd_benchmark",
+            "mort_30_cabg_achievement_threshold",
+            "mort_30_cabg_benchmark",
+            "comp_hip_knee_achievement_threshold",
+            "comp_hip_knee_benchmark",
+            "mort_30_ami_baseline_rate",
+            "mort_30_ami_performance_rate",
+            "mort_30_hf_baseline_rate",
+            "mort_30_hf_performance_rate",
+            "mort_30_pn_baseline_rate",
+            "mort_30_pn_performance_rate",
+            "mort_30_copd_baseline_rate",
+            "mort_30_copd_performance_rate",
+            "mort_30_cabg_baseline_rate",
+            "mort_30_cabg_performance_rate",
+            "comp_hip_knee_baseline_rate",
+            "comp_hip_knee_performance_rate",
+        ]
+        + list(
+            df_read.columns.difference(
+                ["facility_id", "submission_year"]
+            )
         )
-        ax.plot(
-            [min_val, max_val],
-            [min_val, max_val],
-            "r--",
-            linewidth=1,
-        )
-        ax.set_title(target_names[i])
-        ax.set_xlabel("Δy true")
-        ax.set_ylabel("Δy predicted")
+        + [
+            "msa_personal_income_k",
+            "msa_population_density",
+            "msa_per_capita_income",
+        ]
+    )
 
-    plt.tight_layout()
-    plt.savefig(f"./metrics/medicare", dpi=150)
-    # plt.show()
-    plt.close()
+    feature_cols = [f"{c}_prev" for c in prev_cols]
+
+    X = df_final[feature_cols].values
+    y = df_final[target].values
+    y_prev = df_final[[f"{c}_prev" for c in target]].values
+    delta_y = y - y_prev
+
+    return X, delta_y, target
+
+
+def predict_next_period_for_latest_year(
+    model: Any,
+    df: pd.DataFrame,
+    df_read: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Using trained delta model, predict next-period targets (T+1) for the
+    latest observed submission_year T in df.
+    """
+    df_final, target = (
+        structure_data_multivar_with_readmissions_and_demographics_full(
+            df, df_read
+        )
+    )
+
+    # Latest observed year T
+    T = df_final["submission_year"].max()
+    df_T = df_final[df_final["submission_year"] == T].copy()
+
+    # Features at "prev" time = info at T for step T->T+1
+    prev_cols = (
+        [
+            "mort_30_ami_achievement_threshold",
+            "mort_30_ami_benchmark",
+            "mort_30_hf_achievement_threshold",
+            "mort_30_hf_benchmark",
+            "mort_30_pn_achievement_threshold",
+            "mort_30_pn_benchmark",
+            "mort_30_copd_achievement_threshold",
+            "mort_30_copd_benchmark",
+            "mort_30_cabg_achievement_threshold",
+            "mort_30_cabg_benchmark",
+            "comp_hip_knee_achievement_threshold",
+            "comp_hip_knee_benchmark",
+            "mort_30_ami_baseline_rate",
+            "mort_30_ami_performance_rate",
+            "mort_30_hf_baseline_rate",
+            "mort_30_hf_performance_rate",
+            "mort_30_pn_baseline_rate",
+            "mort_30_pn_performance_rate",
+            "mort_30_copd_baseline_rate",
+            "mort_30_copd_performance_rate",
+            "mort_30_cabg_baseline_rate",
+            "mort_30_cabg_performance_rate",
+            "comp_hip_knee_baseline_rate",
+            "comp_hip_knee_performance_rate",
+        ]
+        + list(
+            df_read.columns.difference(
+                ["facility_id", "submission_year"]
+            )
+        )
+        + [
+            "msa_personal_income_k",
+            "msa_population_density",
+            "msa_per_capita_income",
+        ]
+    )
+
+    feature_cols = [f"{c}_prev" for c in prev_cols]
+    X_prev = df_T[feature_cols].values
+
+    # Predict deltas (Δy_{T+1})
+    delta_pred = model.predict(
+        X_prev
+    )  # shape (n_facilities, len(target))
+
+    # Base = current-year targets y_T
+    y_T = df_T[target].values
+
+    # y_{T+1} = y_T + Δŷ_{T+1}
+    y_T_plus_1_pred = y_T + delta_pred
+
+    # Package
+    df_pred = df_T[["facility_id"]].copy()
+    df_pred["submission_year"] = T + 1
+
+    for i, col in enumerate(target):
+        df_pred[f"{col}"] = y_T_plus_1_pred[:, i]
+
+    return df_pred
 
 
 # 0.2841
@@ -518,13 +558,15 @@ if __name__ == "__main__":
     df = load_data()
     df_read = load_readmissions_scaled()
     # x, y = structure_data_multivar_with_readmissions(df, df_read)
-    x, y = structure_data_multivar_with_readmissions_and_demographics(
-        df, df_read
+    x, delta_y, target = (
+        structure_data_multivar_with_readmissions_and_demographics(
+            df, df_read
+        )
     )
     # x, y = structure_data_multivar(df)
 
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, random_state=42
+        x, delta_y, test_size=0.2, random_state=42
     )
     # BEST MODEL CURRENTLY
     model = fit_linear_regression(x_train, y_train)
@@ -532,10 +574,10 @@ if __name__ == "__main__":
     # model = fit_lasso_regression(x_train, y_train, 1e-4)
 
     print("Metrics on training set:")
-    metrics(model, x_train, y_train)
+    metrics_rsquared(model, x_train, y_train)
 
     print("\nMetrics on test set:")
-    metrics(model, x_test, y_test)
+    metrics_rsquared(model, x_test, y_test)
     metrics_relative(model, x_test, y_test)
 
     delta_pred = model.predict(x_test)
@@ -549,4 +591,17 @@ if __name__ == "__main__":
         "comp_hip_knee_performance_rate",
     ]
 
-    plot_delta_scatter(delta_true, delta_pred, target_names)
+    plot_delta_scatter(
+        "metrics/medicare.png", delta_true, delta_pred, target_names
+    )
+
+    # NOTE: To write out predictions
+    model_predict = fit_linear_regression(x, delta_y)
+    predictions = predict_next_period_for_latest_year(
+        model, df, df_read
+    )
+    print(predictions.head)
+    print(predictions.columns)
+    ENGINE.write(
+        predictions, CmsSchema.prediction_hvbp_clinical_outcomes
+    )

@@ -50,6 +50,9 @@ create_tables() {
 		"./etl/augmented/state_region.sql"
 		"./etl/augmented/zip_lat_long.sql"
 		"./etl/augmented/zip_demographics.sql"
+
+		"./etl/prediction/prediction_hvbp_tps.sql"
+		"./etl/prediction/prediction_hvbp_clinical_outcomes.sql"
 	)
 	for sql_file in "${sql_files[@]}"; do
 		if [ ! -f "$sql_file" ]; then

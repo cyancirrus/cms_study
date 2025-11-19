@@ -6,14 +6,14 @@ model_explore() {
 	# echo "             Medicare                "
 	# echo "-------------------------------------"
 	# python ./src/model_medicare_main.py
-	# echo "-------------------------------------"
-	# echo "             Psychiatric             "
-	# echo "-------------------------------------"
-	# python ./src/model_psychiatric_main.py
 	echo "-------------------------------------"
-	echo "             General                 "
+	echo "             Psychiatric             "
 	echo "-------------------------------------"
-	python ./src/model_general_main.py
+	python ./src/model_psychiatric_main.py
+	# echo "-------------------------------------"
+	# echo "             General                 "
+	# echo "-------------------------------------"
+	# python ./src/model_general_main.py
 	echo ""
 }
 

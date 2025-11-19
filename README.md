@@ -250,4 +250,3 @@ this one is extremely different scale, and has a mean 175 - it's per 1000 so nee
 
 // when doing the like connection singleton and bridge
 connect(DB_PATH, check_same_thread=False)
-

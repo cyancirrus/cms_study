@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+# from initialize_environment import RANDOM_STATE, ENGINE
 from initialize_environment import RANDOM_STATE, ENGINE
 import sqlite3
 from typing import List, Tuple, Final
@@ -10,6 +12,7 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from train.search import gbm_grid_search
 import matplotlib.pyplot as plt
+from tables import CmsSchema
 
 from train.models import (
     plot_delta_scatter,
@@ -48,28 +51,28 @@ SELECT * FROM hvbp_tps
 def load_data() -> pd.DataFrame:
     """Load IPFQR facility quality measures."""
     df = ENGINE.exec(QUERY_IPFQR_MEASURES)
-    z_transform(
-        df, "unweighted_normalized_clinical_outcomes_domain_score"
-    )
-    z_transform(
-        df, "weighted_normalized_clinical_outcomes_domain_score"
-    )
-    z_transform(
-        df, "unweighted_person_and_community_engagement_domain_score"
-    )
-    z_transform(
-        df, "weighted_person_and_community_engagement_domain_score"
-    )
-    z_transform(df, "unweighted_normalized_safety_domain_score")
-    z_transform(df, "weighted_safety_domain_score")
-    z_transform(
-        df,
-        "unweighted_normalized_efficiency_and_cost_reduction_domain_score",
-    )
-    z_transform(
-        df, "weighted_efficiency_and_cost_reduction_domain_score"
-    )
-    z_transform(df, "total_performance_score")
+    # z_transform(
+    #     df, "unweighted_normalized_clinical_outcomes_domain_score"
+    # )
+    # z_transform(
+    #     df, "weighted_normalized_clinical_outcomes_domain_score"
+    # )
+    # z_transform(
+    #     df, "unweighted_person_and_community_engagement_domain_score"
+    # )
+    # z_transform(
+    #     df, "weighted_person_and_community_engagement_domain_score"
+    # )
+    # z_transform(df, "unweighted_normalized_safety_domain_score")
+    # z_transform(df, "weighted_safety_domain_score")
+    # z_transform(
+    #     df,
+    #     "unweighted_normalized_efficiency_and_cost_reduction_domain_score",
+    # )
+    # z_transform(
+    #     df, "weighted_efficiency_and_cost_reduction_domain_score"
+    # )
+    # z_transform(df, "total_performance_score")
     return df
 
 
@@ -125,33 +128,28 @@ def structure_hvbp_tps(
     return x, delta_y, target_cols
 
 
-def structure_hvbp_tps_with_demographics(
+def structure_hvbp_tps_with_demographics_full(
     df: pd.DataFrame, db_path: str = DATABASE
-) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+) -> Tuple[pd.DataFrame, List[str]]:
     """
-    Prepare feature matrix X and target delta_y for IPFQR data,
-    using previous-year autoregressive features plus zip demographics.
-
-    - Targets: IPF quality/readmission metrics (current year).
-    - Features: previous-year targets + previous-year demographics.
+    Same as structure_hvbp_tps_with_demographics, but returns df_final
+    with all features + targets, instead of (x, delta_y).
     """
 
     granularity = ["submission_year", "facility_id"]
 
-    # Core metrics you know are non-null (aligned with SQL WHERE)
     target_cols = [
-        # "unweighted_normalized_clinical_outcomes_domain_score",
+        "unweighted_normalized_clinical_outcomes_domain_score",
         "weighted_normalized_clinical_outcomes_domain_score",
-        # "unweighted_person_and_community_engagement_domain_score",
+        "unweighted_person_and_community_engagement_domain_score",
         "weighted_person_and_community_engagement_domain_score",
-        # "unweighted_normalized_safety_domain_score",
+        "unweighted_normalized_safety_domain_score",
         "weighted_safety_domain_score",
-        # "unweighted_normalized_efficiency_and_cost_reduction_domain_score",
+        "unweighted_normalized_efficiency_and_cost_reduction_domain_score",
         "weighted_efficiency_and_cost_reduction_domain_score",
         "total_performance_score",
     ]
 
-    # --- load facility_zip_code + zip_demographics ---
     with sqlite3.connect(db_path) as conn:
         df_fac_zip = pd.read_sql_query(
             """
@@ -175,7 +173,6 @@ def structure_hvbp_tps_with_demographics(
             conn,
         )
 
-    # Z-score normalize demos
     for col in [
         "msa_personal_income_k",
         "msa_population_density",
@@ -185,7 +182,6 @@ def structure_hvbp_tps_with_demographics(
         std = df_zip_demo[col].std()
         df_zip_demo[col] = (df_zip_demo[col] - mean) / std
 
-    # normalize dtypes for join keys
     df["facility_id"] = df["facility_id"]
     df["submission_year"] = df["submission_year"].astype("int64")
 
@@ -197,7 +193,6 @@ def structure_hvbp_tps_with_demographics(
 
     df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
 
-    # facility-year -> zip -> demographics
     df_zip = pd.merge(
         df_fac_zip,
         df_zip_demo,
@@ -205,10 +200,8 @@ def structure_hvbp_tps_with_demographics(
         how="left",
     )
 
-    # --- base perf data (only targets + keys) ---
     df_perf = df[granularity + target_cols]
 
-    # --- attach current-year demographics (will become "prev" after shift) ---
     df_merged = pd.merge(
         df_perf,
         df_zip[
@@ -217,29 +210,24 @@ def structure_hvbp_tps_with_demographics(
                 "submission_year",
                 "msa_personal_income_k",
                 "msa_population_density",
-                # "msa_per_capita_income",
             ]
         ],
         on=["facility_id", "submission_year"],
         how="left",
     )
 
-    # --- shift to build previous-year features ---
     df_prev = df_merged.copy()
-    # so that row (facility, year=t) will pick up year t-1's features
     df_prev["submission_year"] += 1
 
     prev_cols = target_cols + [
         "msa_personal_income_k",
         "msa_population_density",
-        # "msa_per_capita_income",
     ]
 
     df_prev = df_prev.rename(
         columns={c: f"{c}_prev" for c in prev_cols}
     )
 
-    # Merge current year with previous-year features
     df_final = pd.merge(
         df_merged,
         df_prev,
@@ -247,30 +235,95 @@ def structure_hvbp_tps_with_demographics(
         how="inner",
     )
 
-    # Drop rows with NaNs in targets or all prev features
     cols_to_check = (
         target_cols
-        + [f"{c}_prev" for c in target_cols]  # prev targets (for delta)
+        + [f"{c}_prev" for c in target_cols]
         + [
             "msa_personal_income_k_prev",
             "msa_population_density_prev",
-            # "msa_per_capita_income_prev",
         ]
     )
     df_final = df_final.dropna(subset=cols_to_check)
 
-    # Features: previous-year targets + previous-year demos
+    return df_final, target_cols
+
+
+def structure_hvbp_tps_with_demographics(
+    df: pd.DataFrame, db_path: str = DATABASE
+) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+    df_final, target_cols = structure_hvbp_tps_with_demographics_full(
+        df, db_path
+    )
+
+    prev_cols = target_cols + [
+        "msa_personal_income_k",
+        "msa_population_density",
+    ]
     feature_cols = [f"{c}_prev" for c in prev_cols]
 
     x = df_final[feature_cols].values
     y = df_final[target_cols].values
-    # deltas relative to previous-year target values
     delta_y = y - df_final[[f"{c}_prev" for c in target_cols]].values
 
     return x, delta_y, target_cols
 
 
-# NOTE: MSA demo takes model from like 89 -> 95% R^2
+def predict_next_period_for_latest_year(
+    model: Any,
+    df: pd.DataFrame,
+    db_path: str = DATABASE,
+) -> pd.DataFrame:
+    """
+    Using trained delta model, predict next-period targets (t+1) for the
+    latest observed submission_year in df.
+
+    Returns a DataFrame with:
+      facility_id, submission_year, <target_cols>_pred
+    suitable for writing via EngineProtocol.write.
+    """
+    df_final, target_cols = structure_hvbp_tps_with_demographics_full(
+        df, db_path
+    )
+
+    # 1. identify latest year we *have* as "current" (call it T)
+    latest_year = df_final["submission_year"].max()
+
+    # 2. subset to that year
+    df_latest = df_final[
+        df_final["submission_year"] == latest_year
+    ].copy()
+
+    # 3. build feature matrix X_prev (same as training features)
+    prev_cols = target_cols + [
+        "msa_personal_income_k",
+        "msa_population_density",
+    ]
+    feature_cols = [f"{c}_prev" for c in prev_cols]
+
+    X_prev = df_latest[
+        feature_cols
+    ].values  # features at year T (prev for T+1)
+
+    # 4. predict *deltas* for next year (T+1)
+    delta_pred = model.predict(
+        X_prev
+    )  # shape: (n_facilities, len(target_cols))
+
+    # 5. get the "previous" target values that deltas are *relative to*
+    # these are the *_prev columns, i.e. the y_T for step T -> T+1
+    y_prev = df_latest[[f"{c}_prev" for c in target_cols]].values
+    # 6. reconstruct y_{T+1} = y_T + Δŷ_{T+1} if normalizing values need to do something differenct
+    y_T_plus_1_pred = y_prev + delta_pred
+    # 7. package into a nice DataFrame
+    df_pred = df_latest[["facility_id"]].copy()
+    df_pred["submission_year"] = latest_year + 1  # this is T+1
+
+    for i, col in enumerate(target_cols):
+        df_pred[f"{col}_pred"] = y_T_plus_1_pred[:, i]
+
+    return df_pred
+
+
 if __name__ == "__main__":
     df = load_data()
     # x, delta_y, targets = structure_hvbp_tps(df)
@@ -309,3 +362,8 @@ if __name__ == "__main__":
     #     learning_rate_range = np.linspace(0.75, 0.125, 4),
     #     max_depth_range = [3],
     # )
+
+    # NOTE: To write out predictions
+    # model_predict = fit_linear_regression(x, delta_y)
+    # predictions = predict_next_period_for_latest_year(model, df)
+    # ENGINE.write(predictions, CmsSchema.prediction_hvbp_tps);
