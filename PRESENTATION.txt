@@ -1,0 +1,4 @@
+-- remember to shwo the swagger ui auto documentation
+-- get api stood up
+-- redo documentation
+-- plugin spark via bridge
