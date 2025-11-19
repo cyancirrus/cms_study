@@ -599,8 +599,6 @@ if __name__ == "__main__":
     predictions = predict_next_period_for_latest_year(
         model, df, df_read
     )
-    print(predictions.head)
-    print(predictions.columns)
     ENGINE.write(
         predictions, CmsSchema.prediction_hvbp_clinical_outcomes
     )

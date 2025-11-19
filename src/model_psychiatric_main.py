@@ -9,6 +9,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from train.search import gbm_grid_search
+from tables import CmsSchema
 import matplotlib.pyplot as plt
 from train.models import (
     plot_delta_scatter,
@@ -115,7 +116,6 @@ def structure_ipfqr_data(
         "imm_2_percent",
         "readm_30_ipf_rate",
     ]
-
     df_perf = df[granularity + target_cols]
 
     # Shift forward to create previous-year features
@@ -157,10 +157,6 @@ def structure_ipfqr_double_diff(
         y: current delta target
         target_delta_cols: list of target delta column names
     """
-
-    import sqlite3
-    import pandas as pd
-    import numpy as np
 
     granularity = ["submission_year", "facility_id"]
     target_cols = [
@@ -290,9 +286,7 @@ def structure_ipfqr_double_diff(
     return x, y, target_delta_cols
 
 
-def structure_ipfqr_with_demographics(
-    df: pd.DataFrame, db_path: str = DATABASE
-):
+def structure_ipfqr_with_demographics(df: pd.DataFrame):
     """
     Prepare feature matrix X and target delta_y for IPFQR data,
     using previous-year autoregressive features plus zip demographics.
@@ -318,28 +312,25 @@ def structure_ipfqr_with_demographics(
     ]
 
     # --- load facility_zip_code + zip_demographics ---
-    with sqlite3.connect(db_path) as conn:
-        df_fac_zip = pd.read_sql_query(
-            """
-            SELECT
-                submission_year AS submission_year,
-                facility_id,
-                zip_code
-            FROM facility_zip_code;
-            """,
-            conn,
-        )
-        df_zip_demo = pd.read_sql_query(
-            """
-            SELECT
-                zip_code,
-                log(msa_personal_income_k) as msa_personal_income_k,
-                log(msa_population_density)  as msa_population_density,
-                log(msa_per_capita_income)  as msa_per_capita_income
-            FROM zip_demographics;
-            """,
-            conn,
-        )
+    df_fac_zip = ENGINE.exec(
+        """
+        SELECT
+            submission_year AS submission_year,
+            facility_id,
+            zip_code
+        FROM facility_zip_code;
+        """,
+    )
+    df_zip_demo = ENGINE.exec(
+        """
+        SELECT
+            zip_code,
+            log(msa_personal_income_k) as msa_personal_income_k,
+            log(msa_population_density)  as msa_population_density,
+            log(msa_per_capita_income)  as msa_per_capita_income
+        FROM zip_demographics;
+        """,
+    )
 
     # Z-score normalize demos
     for col in [
@@ -436,6 +427,129 @@ def structure_ipfqr_with_demographics(
     return x, y, target_cols, delta_y
 
 
+def predict_next_ipfqr_period(
+    model,
+    df: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Predict next-period IPFQR metrics (T+1) from the latest year in df.
+    """
+    # Rebuild full panel with prev-year features
+    base_values = [
+        "hbips_2_overall_rate_per_1000_raw",
+        "hbips_3_overall_rate_per_1000_raw",
+        "smd_percent_raw",
+        "sub_2_percent_raw",
+        "sub_3_percent_raw",
+        "tob_3_percent_raw",
+        "tob_3a_percent_raw",
+        "tr_1_percent_raw",
+        "imm_2_percent_raw",
+        "readm_30_ipf_rate_raw",
+    ]
+
+    _, y, target_cols, _ = structure_ipfqr_with_demographics(df)
+
+    # Get latest year
+    latest_year = df["submission_year"].max()
+
+    # Subset to latest year
+    df_latest = df[df["submission_year"] == latest_year].copy()
+
+    # Build prev-feature columns (these are the inputs for delta model)
+    prev_cols = target_cols + [
+        "msa_personal_income_k",
+        "msa_population_density",
+    ]
+    feature_cols = [f"{c}_prev" for c in prev_cols]
+
+    # Rebuild panel for latest year to get *_prev columns
+    df_fac_zip = ENGINE.exec(
+        "SELECT submission_year, facility_id, zip_code FROM facility_zip_code;"
+    )
+    df_zip_demo = ENGINE.exec(
+        """
+        SELECT
+            zip_code,
+            log(msa_personal_income_k) as msa_personal_income_k,
+            log(msa_population_density) as msa_population_density,
+            log(msa_per_capita_income) as msa_per_capita_income
+        FROM zip_demographics;
+        """
+    )
+    # Z-score normalize
+    for col in [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]:
+        df_zip_demo[col] = (
+            df_zip_demo[col] - df_zip_demo[col].mean()
+        ) / df_zip_demo[col].std()
+
+    df_fac_zip["submission_year"] = df_fac_zip[
+        "submission_year"
+    ].astype("int64")
+    df_latest["submission_year"] = df_latest["submission_year"].astype(
+        "int64"
+    )
+    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
+    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
+
+    df_zip = pd.merge(
+        df_fac_zip, df_zip_demo, on="zip_code", how="left"
+    )
+    df_merged = pd.merge(
+        df_latest,
+        df_zip[
+            [
+                "facility_id",
+                "submission_year",
+                "msa_personal_income_k",
+                "msa_population_density",
+            ]
+        ],
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    # Build prev columns for prediction: row at T sees features at T as prev for T+1
+    df_prev = df_merged.copy()
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in prev_cols}
+    )
+
+    df_final = pd.merge(
+        df_merged,
+        df_prev,
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    from sklearn.impute import SimpleImputer
+
+    imputer = SimpleImputer(strategy="mean")
+    X_prev = imputer.fit_transform(df_final[feature_cols])
+
+    # # Features for prediction
+    # X_prev = df_final[feature_cols].values
+
+    # Predict deltas
+    delta_pred = model.predict(X_prev)
+
+    # Add deltas to current-year raw targets to get next-period predictions
+    y_prev = df_latest[base_values].values
+    y_T_plus_1_pred = y_prev + delta_pred
+
+    # Build DataFrame to write
+    df_pred = df_latest[["facility_id"]].copy()
+    df_pred["submission_year"] = latest_year + 1
+    for i, col in enumerate(base_values):
+        df_pred[f"{col}_pred"] = y_T_plus_1_pred[:, i]
+
+    return df_pred
+
+
 # 25 km
 # R Squared: 0.1335
 
@@ -514,3 +628,13 @@ if __name__ == "__main__":
     # #     learning_rate_range = np.linspace(0.02, 0.10, 4),
     # #     max_depth_range = [2, 3],
     # # )
+
+    # write predictions for next period
+    predictions = predict_next_ipfqr_period(model, df)
+    print(predictions.head())
+    print(predictions.columns)
+
+    ENGINE.write(
+        predictions,
+        CmsSchema.prediciton_ipfqr_quality_measures_facility,
+    )
