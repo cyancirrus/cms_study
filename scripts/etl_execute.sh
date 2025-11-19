@@ -53,6 +53,7 @@ create_tables() {
 
 		"./etl/prediction/prediction_hvbp_tps.sql"
 		"./etl/prediction/prediction_hvbp_clinical_outcomes.sql"
+		"./etl/prediction/prediction_ipfqr_quality_measures_facility.sql"
 	)
 	for sql_file in "${sql_files[@]}"; do
 		if [ ! -f "$sql_file" ]; then

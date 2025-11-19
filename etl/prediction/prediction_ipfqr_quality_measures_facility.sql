@@ -1,4 +1,4 @@
-CREATE TABLE prediciton_ipfqr_quality_measures_facility (
+CREATE TABLE prediction_ipfqr_quality_measures_facility (
     facility_id REAL,
     submission_year REAL,
     hbips_2_overall_rate_per_1000_raw_pred REAL,

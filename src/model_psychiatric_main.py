@@ -545,7 +545,8 @@ def predict_next_ipfqr_period(
     df_pred = df_latest[["facility_id"]].copy()
     df_pred["submission_year"] = latest_year + 1
     for i, col in enumerate(base_values):
-        df_pred[f"{col}_pred"] = y_T_plus_1_pred[:, i]
+        orig_name = col.replace("_raw", "")  # strip the _raw suffix
+        df_pred[orig_name] = y_T_plus_1_pred[:, i]
 
     return df_pred
 
@@ -636,5 +637,5 @@ if __name__ == "__main__":
 
     ENGINE.write(
         predictions,
-        CmsSchema.prediciton_ipfqr_quality_measures_facility,
+        CmsSchema.prediction_ipfqr_quality_measures_facility,
     )

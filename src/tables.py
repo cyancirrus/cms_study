@@ -29,4 +29,4 @@ class CmsSchema(Enum):
     # predictions
     prediction_hvbp_tps                                = "prediction_hvbp_tps"
     prediction_hvbp_clinical_outcomes                  = "prediction_hvbp_clinical_outcomes"
-    prediciton_ipfqr_quality_measures_facility         = "prediciton_ipfqr_quality_measures_facility"
+    prediction_ipfqr_quality_measures_facility         = "prediction_ipfqr_quality_measures_facility"
