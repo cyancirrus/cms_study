@@ -410,7 +410,6 @@ def structure_data_multivar_with_readmissions_and_demographics_full(
     return df_final, target
 
 
-# NEW
 def structure_data_multivar_with_readmissions_and_demographics(
     df: pd.DataFrame,
     df_read: pd.DataFrame,

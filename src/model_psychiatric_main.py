@@ -24,39 +24,6 @@ from train.models import (
 )
 
 DATABASE = "source.db"
-# hbips_2_overall_rate_per_1000 is not NULL
-# and hbips_3_overall_rate_per_1000 is not NULL
-# QUERY_IPFQR_MEASURES: Final[
-#     str
-# ] = """
-# SELECT
-#         submission_year,
-#         facility_id,
-#         hbips_2_overall_rate_per_1000 as hbips_2_overall_rate_per_1000,
-#         hbips_3_overall_rate_per_1000 as hbips_3_overall_rate_per_1000,
-#         log(smd_percent) as smd_percent,
-#         log(sub_2_percent) as sub_2_percent,
-#         log(sub_3_percent) as sub_3_percent,
-#         log(tob_3_percent) as tob_3_percent,
-#         log(tob_3a_percent) as tob_3a_percent,
-#         log(tr_1_percent) as tr_1_percent,
-#         log(imm_2_percent) as imm_2_percent,
-#         log(readm_30_ipf_rate) as readm_30_ipf_rate
-
-#     FROM
-#         ipfqr_quality_measures_facility
-#     WHERE
-#         hbips_2_overall_rate_per_1000 IS NOT NULL
-#         AND hbips_3_overall_rate_per_1000 IS NOT NULL
-#         AND smd_percent IS NOT NULL
-#         AND sub_2_percent IS NOT NULL
-#         AND sub_3_percent IS NOT NULL
-#         AND tob_3_percent IS NOT NULL
-#         AND tob_3a_percent IS NOT NULL
-#         AND tr_1_percent IS NOT NULL
-#         AND imm_2_percent IS NOT NULL
-#         AND readm_30_ipf_rate IS NOT NULL
-# ;"""
 QUERY_IPFQR_MEASURES: Final[
     str
 ] = """
@@ -72,7 +39,17 @@ SELECT
         log(tob_3a_percent) as tob_3a_percent,
         log(tr_1_percent) as tr_1_percent,
         log(imm_2_percent) as imm_2_percent,
-        log(readm_30_ipf_rate) as readm_30_ipf_rate
+        log(readm_30_ipf_rate) as readm_30_ipf_rate,
+        hbips_2_overall_rate_per_1000 as hbips_2_overall_rate_per_1000_raw,
+        hbips_3_overall_rate_per_1000 as hbips_3_overall_rate_per_1000_raw,
+        smd_percent as smd_percent_raw,
+        sub_2_percent as sub_2_percent_raw,
+        sub_3_percent as sub_3_percent_raw,
+        tob_3_percent as tob_3_percent_raw,
+        tob_3a_percent as tob_3a_percent_raw,
+        tr_1_percent as tr_1_percent_raw,
+        imm_2_percent as imm_2_percent_raw,
+        readm_30_ipf_rate as readm_30_ipf_rate_raw
     
     FROM
         ipfqr_quality_measures_facility
@@ -167,6 +144,150 @@ def structure_ipfqr_data(
     y = df_clean[target_cols].values
     delta_y = y - df_clean[[f"{c}_prev" for c in target_cols]].values
     return x, delta_y, target_cols
+
+
+def structure_ipfqr_double_diff(
+    df: pd.DataFrame, db_path: str = DATABASE
+):
+    """
+    Prepare features for double-difference model:
+        Δy_{t+1} = f(Δy_t, prev_demographics)
+    Returns:
+        x: previous delta + demographics features
+        y: current delta target
+        target_delta_cols: list of target delta column names
+    """
+
+    import sqlite3
+    import pandas as pd
+    import numpy as np
+
+    granularity = ["submission_year", "facility_id"]
+    target_cols = [
+        "hbips_2_overall_rate_per_1000",
+        "hbips_3_overall_rate_per_1000",
+        "smd_percent",
+        "sub_2_percent",
+        "sub_3_percent",
+        "tob_3_percent",
+        "tob_3a_percent",
+        "tr_1_percent",
+        "imm_2_percent",
+        "readm_30_ipf_rate",
+    ]
+
+    # --- load demographics ---
+    with sqlite3.connect(db_path) as conn:
+        df_fac_zip = pd.read_sql_query(
+            "SELECT submission_year, facility_id, zip_code FROM facility_zip_code;",
+            conn,
+        )
+        df_zip_demo = pd.read_sql_query(
+            """
+            SELECT zip_code,
+                log(msa_personal_income_k) as msa_personal_income_k,
+                log(msa_population_density) as msa_population_density,
+                log(msa_per_capita_income) as msa_per_capita_income
+            FROM zip_demographics;
+            """,
+            conn,
+        )
+
+    # z-score normalize
+    for col in [
+        "msa_personal_income_k",
+        "msa_population_density",
+        "msa_per_capita_income",
+    ]:
+        df_zip_demo[col] = (
+            df_zip_demo[col] - df_zip_demo[col].mean()
+        ) / df_zip_demo[col].std()
+
+    # merge facility -> zip -> demo
+    df_fac_zip["submission_year"] = df_fac_zip[
+        "submission_year"
+    ].astype(int)
+    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
+    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
+    df_zip = pd.merge(
+        df_fac_zip, df_zip_demo, on="zip_code", how="left"
+    )
+
+    # --- merge performance data with demographics ---
+    df_perf = df[granularity + target_cols]
+    df_merged = pd.merge(
+        df_perf,
+        df_zip[
+            [
+                "facility_id",
+                "submission_year",
+                "msa_personal_income_k",
+                "msa_population_density",
+            ]
+        ],
+        on=["facility_id", "submission_year"],
+        how="left",
+    )
+
+    # --- compute first difference delta_y_t = y_t - y_{t-1} ---
+    df_prev = df_merged.copy()
+    df_prev["submission_year"] += 1
+    df_prev = df_prev.rename(
+        columns={c: f"{c}_prev" for c in target_cols}
+    )
+
+    df_delta = pd.merge(
+        df_merged,
+        df_prev[
+            ["facility_id", "submission_year"]
+            + [f"{c}_prev" for c in target_cols]
+        ],
+        on=["facility_id", "submission_year"],
+        how="inner",
+    )
+
+    for c in target_cols:
+        df_delta[f"{c}_delta"] = df_delta[c] - df_delta[f"{c}_prev"]
+
+    # --- compute double difference: previous delta features ---
+    delta_cols = [f"{c}_delta" for c in target_cols]
+    df_prev_delta = df_delta[
+        ["facility_id", "submission_year"]
+        + delta_cols
+        + ["msa_personal_income_k", "msa_population_density"]
+    ].copy()
+    df_prev_delta["submission_year"] += 1
+
+    # rename previous delta columns for features
+    df_prev_delta = df_prev_delta.rename(
+        columns={c: f"{c}_prev" for c in delta_cols}
+    )
+
+    # merge back to get x (prev delta + current demo) and y (current delta)
+    df_final = pd.merge(
+        df_delta,
+        df_prev_delta,
+        on=[
+            "facility_id",
+            "submission_year",
+            "msa_personal_income_k",
+            "msa_population_density",
+        ],
+        how="inner",
+    )
+
+    # drop any remaining NaNs
+    feature_cols = [f"{c}_prev" for c in target_cols] + [
+        "msa_personal_income_k",
+        "msa_population_density",
+    ]
+    target_delta_cols = [f"{c}_delta" for c in target_cols]
+    df_final = df_final.dropna(subset=feature_cols + target_delta_cols)
+
+    x = df_final[feature_cols].values
+    y = df_final[target_delta_cols].values
+
+    return x, y, target_delta_cols
 
 
 def structure_ipfqr_with_demographics(
@@ -313,150 +434,6 @@ def structure_ipfqr_with_demographics(
     delta_y = y - df_final[[f"{c}_prev" for c in target_cols]].values
 
     return x, y, target_cols, delta_y
-
-
-def structure_ipfqr_double_diff(
-    df: pd.DataFrame, db_path: str = DATABASE
-):
-    """
-    Prepare features for double-difference model:
-        Δy_{t+1} = f(Δy_t, prev_demographics)
-    Returns:
-        x: previous delta + demographics features
-        y: current delta target
-        target_delta_cols: list of target delta column names
-    """
-
-    import sqlite3
-    import pandas as pd
-    import numpy as np
-
-    granularity = ["submission_year", "facility_id"]
-    target_cols = [
-        "hbips_2_overall_rate_per_1000",
-        "hbips_3_overall_rate_per_1000",
-        "smd_percent",
-        "sub_2_percent",
-        "sub_3_percent",
-        "tob_3_percent",
-        "tob_3a_percent",
-        "tr_1_percent",
-        "imm_2_percent",
-        "readm_30_ipf_rate",
-    ]
-
-    # --- load demographics ---
-    with sqlite3.connect(db_path) as conn:
-        df_fac_zip = pd.read_sql_query(
-            "SELECT submission_year, facility_id, zip_code FROM facility_zip_code;",
-            conn,
-        )
-        df_zip_demo = pd.read_sql_query(
-            """
-            SELECT zip_code,
-                log(msa_personal_income_k) as msa_personal_income_k,
-                log(msa_population_density) as msa_population_density,
-                log(msa_per_capita_income) as msa_per_capita_income
-            FROM zip_demographics;
-            """,
-            conn,
-        )
-
-    # z-score normalize
-    for col in [
-        "msa_personal_income_k",
-        "msa_population_density",
-        "msa_per_capita_income",
-    ]:
-        df_zip_demo[col] = (
-            df_zip_demo[col] - df_zip_demo[col].mean()
-        ) / df_zip_demo[col].std()
-
-    # merge facility -> zip -> demo
-    df_fac_zip["submission_year"] = df_fac_zip[
-        "submission_year"
-    ].astype(int)
-    df_fac_zip["zip_code"] = df_fac_zip["zip_code"].astype(str)
-    df_zip_demo["zip_code"] = df_zip_demo["zip_code"].astype(str)
-    df_zip = pd.merge(
-        df_fac_zip, df_zip_demo, on="zip_code", how="left"
-    )
-
-    # --- merge performance data with demographics ---
-    df_perf = df[granularity + target_cols]
-    df_merged = pd.merge(
-        df_perf,
-        df_zip[
-            [
-                "facility_id",
-                "submission_year",
-                "msa_personal_income_k",
-                "msa_population_density",
-            ]
-        ],
-        on=["facility_id", "submission_year"],
-        how="left",
-    )
-
-    # --- compute first difference delta_y_t = y_t - y_{t-1} ---
-    df_prev = df_merged.copy()
-    df_prev["submission_year"] += 1
-    df_prev = df_prev.rename(
-        columns={c: f"{c}_prev" for c in target_cols}
-    )
-
-    df_delta = pd.merge(
-        df_merged,
-        df_prev[
-            ["facility_id", "submission_year"]
-            + [f"{c}_prev" for c in target_cols]
-        ],
-        on=["facility_id", "submission_year"],
-        how="inner",
-    )
-
-    for c in target_cols:
-        df_delta[f"{c}_delta"] = df_delta[c] - df_delta[f"{c}_prev"]
-
-    # --- compute double difference: previous delta features ---
-    delta_cols = [f"{c}_delta" for c in target_cols]
-    df_prev_delta = df_delta[
-        ["facility_id", "submission_year"]
-        + delta_cols
-        + ["msa_personal_income_k", "msa_population_density"]
-    ].copy()
-    df_prev_delta["submission_year"] += 1
-
-    # rename previous delta columns for features
-    df_prev_delta = df_prev_delta.rename(
-        columns={c: f"{c}_prev" for c in delta_cols}
-    )
-
-    # merge back to get x (prev delta + current demo) and y (current delta)
-    df_final = pd.merge(
-        df_delta,
-        df_prev_delta,
-        on=[
-            "facility_id",
-            "submission_year",
-            "msa_personal_income_k",
-            "msa_population_density",
-        ],
-        how="inner",
-    )
-
-    # drop any remaining NaNs
-    feature_cols = [f"{c}_prev" for c in target_cols] + [
-        "msa_personal_income_k",
-        "msa_population_density",
-    ]
-    target_delta_cols = [f"{c}_delta" for c in target_cols]
-    df_final = df_final.dropna(subset=feature_cols + target_delta_cols)
-
-    x = df_final[feature_cols].values
-    y = df_final[target_delta_cols].values
-
-    return x, y, target_delta_cols
 
 
 # 25 km
