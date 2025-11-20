@@ -9,3 +9,5 @@
 ./scripts/launch_api.sh
 ./scripts/requests.sh
 ./scripts/teerminate.sh
+
+// backup db in the data file

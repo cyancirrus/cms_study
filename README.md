@@ -1,104 +1,176 @@
-# DATA NOTES
-- heavily consider grabbing 2024 data Provider value of care doesn't exist Downloaded https://data.cms.gov/provider-data/dataset/rrqw-56er :: Medicare Spending Per Beneficiary
+# Hospital Quality Analytics
 
-- Data definition here :: https://data.cms.gov/provider-data/sites/default/files/data_dictionaries/hospital/HOSPITAL_Data_Dictionary.pdf
-- Create exclusion column for "too little data" if it's a rate 
-- do a quick check that like end_date = fiscal year, it's not perfect but i don't have a lot of time and there isn't monthly data to like pull back effects
+A predictive analytics system for Medicare hospital performance, focusing on mortality rates, complications, patient safety, and quality of care outcomes.
 
+## Overview
 
+This project analyzes CMS (Center for Medicare and Medicaid Services) hospital data to predict year-over-year changes in hospital performance metrics. The system combines hospital outcomes data with demographic and geographic context to generate actionable recommendations.
 
-# IMPORTANT DEFNS
--- CMS := Center for Medicare and Medicaid Services
--- HVBP := Hospital Value-Based Purchasing.
--- HAC:= Hospital-Acquired Condition Reduction Program
--- HAC Reduction is Medicare specific
--- Medicare = federal health insurance for the elderly (65+) and certain disabled populations.
--- Medicaid = state + federal program for low-income individuals.
--- HCAHPS := Hospital Consumer Assessment of Healthcare Providers and Systems
--- IPFQR := Inpatient Psychiatric Facility Quality Reporting Program
+## Quick Start
 
-# HOW TO GET DATA
+```bash
+# Enable virtual environment
+source ../bin/activate
 
-* new data * 
-- hit the metadata api :: curl  "https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items/avtz-f2ge"
-- clean it and make sure like no forward slashes
-- download data into the year
+# Run ETL pipeline
+./scripts/etl_execute.sh
 
+# Launch API server
+./scripts/launch_api.sh
 
-* old data * 
-- need to extract from zip here "https://data.cms.gov/provider-data/archived-data/hospitals" for last year
-- download onto machine mv to temp directory unzip the files using _dev_filter_.sh ./data/historical/year; // this really should be rewritten and tested prior 
+# Test API endpoints
+./scripts/requests.sh
 
+# Stop API server
+./scripts/terminate_api.sh
 
--- found a new zipcode https://download.geonames.org/export/zip/ where u do the american one
+# Generate visualizations
+./scripts/visualization_histograms.sh
 
+# Check model performance
+./scripts/model_performance.sh
+```
 
-## fiscal_year
-- October 1 is inclusive, September 30 is inclusive. So a measure dated Sep 30, 2025 still belongs to FY25.
-- Any timestamp after Sep 30, 2025 23:59:59 would roll over into FY26.
+## Key Definitions
 
-FY2025 = Oct 1, 2024 → Sep 30, 2025.
+| Acronym | Definition |
+|---------|------------|
+| **CMS** | Center for Medicare and Medicaid Services |
+| **HVBP** | Hospital Value-Based Purchasing |
+| **HAC** | Hospital-Acquired Condition Reduction Program |
+| **HCAHPS** | Hospital Consumer Assessment of Healthcare Providers and Systems |
+| **IPFQR** | Inpatient Psychiatric Facility Quality Reporting Program |
+| **Medicare** | Federal health insurance for elderly (65+) and certain disabled populations |
+| **Medicaid** | State + federal program for low-income individuals |
+| **MSA** | Metropolitan Statistical Area |
 
+## Data Sources
 
-# DATA AUGMENTATION
+### Primary CMS Data
 
-<!-- // Data here seems much better -->
-<!-- https://github.com/Ro-Data/Ro-Census-Summaries-By-Zipcode -->
+Current year data is fetched via CMS metadata API:
+```bash
+curl "https://data.cms.gov/provider-data/api/1/metastore/schemas/dataset/items/avtz-f2ge"
+```
 
-## State Region // 2017
-https://www2.census.gov/programs-surveys/bps/guidance/states-by-region.pdf // paste raw and then manipulate with neovim, 53 macro
+Historical data (2021-2024) from archived datasets:
+- https://data.cms.gov/provider-data/archived-data/hospitals
 
-## MSA Latitude Longitude
-https://data-usdot.opendata.arcgis.com/datasets/usdot::core-based-statistical-areas/about
+Data dictionary reference:
+- https://data.cms.gov/provider-data/sites/default/files/data_dictionaries/hospital/HOSPITAL_Data_Dictionary.pdf
 
+### Geographic & Demographic Data
 
-## MSA statistics
-https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas
+**ZIP Code Data**: https://download.geonames.org/export/zip/ (US dataset)
 
-## MSA dim // 
-https://www.census.gov/geographies/reference-maps/2020/geo/cbsa.html
-https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2015/delineation-files/list1.xlsx
+**State Regions** (Census 2017): https://www2.census.gov/programs-surveys/bps/guidance/states-by-region.pdf
 
-## MSA Reasoning
-- Population influence: decay as exp(-distance^2 / scale) from nearest MSA centroid
-    - optional: sum top k nearest MSAs weighted by this decay
-    - Population influence = Σ_i Population_i * exp(-distance_i^2 / (2 * σ^2))
+**MSA Coordinates**: https://data-usdot.opendata.arcgis.com/datasets/usdot::core-based-statistical-areas/about
 
-- Income: take the nearest MSA’s median or per-capita income
-    - used as a static socio-economic proxy
+**MSA Income Statistics**: https://www.bea.gov/data/income-saving/personal-income-county-metro-and-other-areas
 
+**MSA Definitions**: 
+- https://www.census.gov/geographies/reference-maps/2020/geo/cbsa.html
+- https://www2.census.gov/programs-surveys/metro-micro/geographies/reference-files/2015/delineation-files/list1.xlsx
 
-### Why
+## Dataset Descriptions
 
-// allows us to see like demographics beyond state / city / county which would be too many like params and too few datas
+### Hospital Outcomes & Quality
+- `Complications_and_Deaths-Hospital.csv` - Mortality and complication rates for various conditions
+- `Timely_and_Effective_Care-Hospital.csv` - Process measure compliance
+- `Unplanned_Hospital_Visits-Hospital.csv` - Readmission metrics
 
-* POPULATION DENSITY *
-Urban vs rural, 
-- more specialty doctors
-- more people wish to live in said city
-- higher competition for jobs etc..
+### Payment & Penalty Programs
+- `FY_2025_HAC_Reduction_Program_Hospital.csv` - Safety penalties
+- `FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv` - Readmission penalties
+- `hvbp_clinical_outcomes.csv` - Value-based purchasing: clinical domain
+- `hvbp_efficiency_and_cost_reduction.csv` - Value-based purchasing: cost domain
+- `hvbp_person_and_community_engagement.csv` - Value-based purchasing: engagement domain
+- `hvbp_safety.csv` - Value-based purchasing: safety domain
+- `hvbp_tps.csv` - Total performance scores
 
-* INCOME *
-- Higher-income populations:
-    - More likely to have employer-provided/private insurance
-    - Better coverage, higher ability to pay for elective care
-- Lower-income populations:
-    - May delay care
-    - Avoid specialty visits
-    - Use ERs for primary care
-- Hospital funding:
-    - Local/state/federal taxes subsidize public hospitals
-    - Higher local revenue → better infrastructure
+### Patient Experience
+- `HCAHPS-Hospital.csv` - General hospital patient satisfaction
+- `PCH_HCAHPS_HOSPITAL.csv` - Pediatric hospital patient satisfaction
 
+### Financial & Specialty
+- `Medicare_Hospital_Spending_Per_Patient-Hospital.csv` - Cost per episode
+- `IPFQR_QualityMeasures_Facility.csv` - Psychiatric facility quality measures
+- `Hospital_General_Information.csv` - Facility characteristics and metadata
 
+### Geographic Reference
+- `RUCA-codes-2020-tract.csv` - Rural-Urban Commuting Area codes (tract level)
+- `RUCA-codes-2020-zipcode.csv` - RUCA codes (ZIP level)
 
-### Notes / Limitations
-- ZIP→MSA mapping approximate; using centroid distances
-- Population decay ignores travel patterns; Euclidean distance used
-- Income feature assumes nearest MSA is representative of ZIP’s socio-economic context
+## Fiscal Year Definition
+
+**FY2025** = October 1, 2024 → September 30, 2025
+
+- October 1 is inclusive, September 30 is inclusive
+- A measure dated Sep 30, 2025 still belongs to FY25
+- Any timestamp after Sep 30, 2025 23:59:59 rolls into FY26
+
+## Data Normalization Notes
+
+### Complications and Deaths Measures
+
+**Per 100 patients:**
+- `COMP_HIP_KNEE` - Rate of complications for hip/knee replacement
+- `MORT_30_AMI` - 30-day death rate for heart attack
+- `MORT_30_CABG` - 30-day death rate for CABG surgery
+- `MORT_30_COPD` - 30-day death rate for COPD
+- `MORT_30_HF` - 30-day death rate for heart failure
+- `MORT_30_PN` - 30-day death rate for pneumonia
+- `MORT_30_STK` - 30-day death rate for stroke
+- `Hybrid_HWM` - Hospital-Wide All-Cause Risk Standardized Mortality (ratio × 100)
+
+**Per 1000 patients (PSI measures):**
+- `PSI_03` - Pressure ulcer rate
+- `PSI_04` - Death rate among surgical inpatients with serious treatable complications
+- `PSI_06` - Iatrogenic pneumothorax rate
+- `PSI_08` - In-hospital fall-associated fracture rate
+- `PSI_09` - Postoperative hemorrhage or hematoma rate
+- `PSI_10` - Postoperative acute kidney injury requiring dialysis rate
+- `PSI_11` - Postoperative respiratory failure rate
+- `PSI_12` - Perioperative pulmonary embolism or DVT rate
+- `PSI_13` - Postoperative sepsis rate
+- `PSI_14` - Postoperative wound dehiscence rate
+- `PSI_15` - Abdominopelvic accidental puncture or laceration rate
+- `PSI_90` - CMS Medicare PSI 90: Patient safety and adverse events composite
+
+⚠️ **Note**: PSI_04 has extremely different scale (mean ~175 per 1000) - divide by 1000 for consistency.
+
+## Feature Engineering
+
+### MSA-Based Demographics
+
+**Population Influence Model:**
+```
+Population_influence = Σᵢ Population_i × exp(-distance_i² / (2 × σ²))
+```
+- Decay function from nearest MSA centroid
+- Optional: Sum top k nearest MSAs weighted by decay
+- Captures urban/rural gradient
+
+**Income Proxy:**
+- Uses nearest MSA's median or per-capita income
+- Static socio-economic indicator
+
+**Rationale:**
+- Provides demographic context beyond state/city/county
+- Avoids sparse data at granular geographic levels
+- **Population density** indicates: urban vs rural, specialist availability, competition
+- **Income levels** indicate: insurance coverage, care utilization patterns, hospital funding
+
+**Limitations:**
+- ZIP → MSA mapping is approximate (centroid distances)
+- Population decay ignores actual travel patterns (uses Euclidean distance)
+- Income assumes nearest MSA represents ZIP's socio-economic context
 - Racial demographics excluded to avoid legal/ethical complications
 
-## Mental Stratification
+### Population Stratification
+
+```
 General Population
 │
 ├─ Subdomains
@@ -107,146 +179,123 @@ General Population
 │   └─ Other (general adult, non-Medicare)
 │
 └─ Demographics (from MSA / ZIP)
-    ├─ State
+    ├─ State & Region
     ├─ Population density (urban/rural)
     └─ Average income
+```
 
-features :=
-- state
-- hospital mission type (womens, children, cancer, rehabilitation)
-- ownership / payment type (government, not for profit, proprietary)
-- estimated pop density
-- estimated income per individual (taxes should average, even if not perfect, like is data i have)
-- general pop x psychiatric x medicare
+### Model Features
+- State and census region
+- Hospital mission type (women's, children's, cancer, rehabilitation)
+- Ownership type (government, not-for-profit, proprietary)
+- Estimated population density
+- Estimated income per capita
+- Domain-specific outcomes (general, psychiatric, Medicare)
 
+## Business Objectives - Feasibility Assessment
 
-x_{t+1} = f(x_{t-1};
+### ✅ Achievable
 
-## Immediate vs like predictive actionability
-1) Spot Treatment / Immediate Focus
-Use your predictive model to identify hospitals or departments where key measures (readmissions, continuity-of-care, safety metrics) are likely to deteriorate.
-Recommend short-term interventions or monitoring, e.g., targeted audits, patient follow-ups, or staffing adjustments.
-Goal: mitigate the worst outcomes now — basically triage based on forecasted risk.
+**1. Improve Quality of Care**
+- Data: HVBP measures, safety/readmission data, Medicare clinical outcomes
+- Approach: Predictive models track year-over-year performance, identify at-risk hospitals
 
-2) Process & Structural Focus / Reflective Study
-Recognize that trends like rising readmissions or low psychiatric continuity-of-care aren’t isolated; they reflect latent systemic issues.
-Propose follow-up studies to identify predictors or underlying processes driving these outcomes. For instance, analyze workflows, handoffs, or discharge procedures that correlate with readmission.
-Goal: guide long-term process improvements that reduce systemic risk rather than treating individual symptoms.
+**2. Increase Patient Engagement**
+- Data: HCAHPS and Person & Community Engagement measures
+- Approach: Direct measurement of communication, responsiveness, satisfaction
 
-# Enable virtual environment
-source ../bin/activate
+**4. Increase Revenue Capture** (Partial)
+- Data: HVBP, HAC, readmission reduction programs
+- Approach: Identify hospitals at risk of losing reimbursement points
 
-# NEXT STEPS
-Data Considerations:
-Prior-year data (2023, 2024) is needed for predictive modeling. These can be loaded from ZIP archives; otherwise, analysis would be limited to correlation-based insights.
-Population density and median income, combined with state information, provide a reasonable proxy for demographic context.
+### ❌ Not Feasible with Current Data
 
+**3. Reduce Cost of Care**
+- Missing: Length of stay, staffing levels, procedure-specific costs
+- Available: MSPB (limited spending info)
+- Status: Cost reduction analysis would be speculative
 
-Questions:
-    Improve quality of care
-    Increase patient engagement
-    Reduce cost of care
-    Increase revenue capture
-    Provide accurate and timely clinical outcomes
+**5. Provide Accurate Clinical Outcomes** (Limited)
+- True clinical outcomes not included
+- Partial proxy: IPFQR continuity-of-care measures for psychiatric subdomain
 
+## Modeling Approach
 
+### Strategy
+1. **Predictive Framework**: Δy (year-over-year change) using AR(1)/delta multivariate regression
+2. **Feature Alignment**: All features aligned by `hospital_id` and `fiscal_year`
+3. **Lag Structure**: Previous-year measures used to model future changes
+4. **Regularization**: Lasso/Ridge for high-dimensional feature selection
 
-1) Feasibility of Business Objectives:
-Improve Quality of Care: Achievable using HVBP measures, safety/readmission data, and Medicare clinical outcomes. Predictive models can track YoY performance and identify hospitals with potential quality issues.
+### Two-Pronged Analysis
 
-2) Increase Patient Engagement: Achievable via HCAHPS and Person & Community Engagement measures. While perception-based, these directly capture engagement, communication, responsiveness, and patient satisfaction.
+**1. Spot Treatment / Immediate Focus**
+- Identify hospitals where key measures likely to deteriorate
+- Recommend short-term interventions: audits, follow-ups, staffing adjustments
+- Goal: Triage based on forecasted risk
 
-3) Reduce Cost of Care: Not feasible with the current dataset. While MSPB provides some spending information, detailed operational metrics like length of stay, staffing, and procedure costs are missing, making cost reduction analysis speculative.
+**2. Process & Structural Focus / Reflective Study**
+- Recognize systemic patterns (e.g., rising readmissions, low psychiatric continuity)
+- Propose follow-up studies to identify root causes
+- Analyze workflows, handoffs, discharge procedures
+- Goal: Long-term process improvements, reduce systemic risk
 
-4) Increase Revenue Capture: Partially feasible. Data from HVBP, HAC, and readmission reduction programs can highlight hospitals at risk of losing points or reimbursements, helping management prioritize interventions to safeguard revenue.
+## Implementation Notes
 
-5) Provide Accurate and Timely Clinical Outcomes: Limited feasibility. True clinical outcomes are not included, but psychiatric continuity-of-care measures (IPFQR) offer a partial proxy within that subdomain.
-
-### Normalizations
-
-## Complications and Deaths
-
-// even more uncertain but think these are 100
-COMP_HIP_KNEE|Rate of complications for hip/knee replacement patients
-
-// ratio * 100
-Hybrid_HWM|Hybrid Hospital-Wide All-Cause Risk Standardized Mortality Rate
-
-// think these are per 100
-MORT_30_AMI|Death rate for heart attack patients
-MORT_30_CABG|Death rate for CABG surgery patients
-MORT_30_COPD|Death rate for COPD patients
-MORT_30_HF|Death rate for heart failure patients
-MORT_30_PN|Death rate for pneumonia patients
-MORT_30_STK|Death rate for stroke patients
-
-// PSIS are per 1000 
-PSI_03|Pressure ulcer rate
-PSI_04|Death rate among surgical inpatients with serious treatable complications
-PSI_06|Iatrogenic pneumothorax rate
-PSI_08|In-hospital fall-associated fracture rate
-PSI_09|Postoperative hemorrhage or hematoma rate
-PSI_10|Postoperative acute kidney injury requiring dialysis rate
-PSI_11|Postoperative respiratory failure rate
-PSI_12|Perioperative pulmonary embolism or deep vein thrombosis rate
-PSI_13|Postoperative sepsis rate
-PSI_14|Postoperative wound dehiscence rate
-PSI_15|Abdominopelvic accidental puncture or laceration rate
-PSI_90|CMS Medicare PSI 90: Patient safety and adverse events composite
-
-
-
-this one is extremely different scale, and has a mean 175 - it's per 1000 so need to divide it by 1000
-"Death rate among surgical inpatients with serious treatable complications",
-
-# Data Enrichment & Modeling Notes
-
-**Current focus:** Predict Medicare-related hospital mortality/complication measures (Δy year-over-year).
-
-## Potential Predictive Features
-
-- **Hospital outcomes & complications**  
-  - `Complications_and_Deaths-Hospital.csv`  
-  - Includes AMI, HF, PN, COPD, CABG, hip/knee complications, PSI measures  
-  - Use raw rates, aggregates, or weighted scores  
-
-- **Safety & quality programs**  
-  - HAC reduction (`FY_2025_HAC_Reduction_Program_Hospital.csv`)  
-  - Readmission rates (`FY_2025_Hospital_Readmissions_Reduction_Program_Hospital.csv`)  
-
-- **Patient experience**  
-  - HCAHPS scores (`HCAHPS-Hospital.csv`, `PCH_HCAHPS_HOSPITAL.csv`)  
-
-- **Hospital financials**  
-  - Medicare spending per patient (`Medicare_Hospital_Spending_Per_Patient-Hospital.csv`)  
-
-- **Care process measures**  
-  - Timely and effective care (`Timely_and_Effective_Care-Hospital.csv`)  
-
-- **Demographics / geography**  
-  - MSA, population density, median income (via RUCA/ZIP/MSA mapping)  
-
-## Approach
-
-- Align all features by `hospital_id` & `fiscal_year`.  
-- Lag previous-year measures to model Δy (year-over-year change).  
-- Normalize/scale measures as needed.  
-- Feed into AR(1)/delta multivariate regression for predictive modeling.  
-
-**Goal:** Build a robust, interpretable model that uses prior outcomes and hospital context to forecast performance changes.
-
-
-## Next Steps / Modeling Notes
-
-- **Feature Expansion:** Include patient experience (HCAHPS), safety/complication measures, hospital type, MSA demographics, and financial metrics.  
-- **Regularization:** Use Lasso/Ridge to handle many features and pull out signal efficiently.  
-- **Multi-target Modeling:** Explore predictive relationships across multiple outcomes simultaneously.  
-- **Forecasting & Recommendations:** Use Δy/year-over-year models to generate actionable recommendations for hospitals and patients.  
-- **Signal Enrichment:** Investigate external demographics, income, population density, and prior-year measures to improve predictive power.
-
-
-- colour by MSA, size, or baseline rate — often patterns pop immediately.
-- colour by hospital type
-
-// when doing the like connection singleton and bridge
+### Database Configuration
+Use singleton pattern with thread safety:
+```python
 connect(DB_PATH, check_same_thread=False)
+```
+
+### Visualization Tips
+- Color by MSA, hospital type, or baseline rate to reveal patterns
+- Size by population or outcome severity
+- Patterns often emerge immediately with proper visual encoding
+
+## Project Structure
+
+```
+├── data/
+│   ├── raw/              # Original CMS datasets
+│   ├── source/           # Cleaned source data
+│   ├── augmented/        # MSA and region enrichment
+│   ├── historical/       # 2021-2024 archives
+│   └── zip/              # Geographic reference data
+├── etl/
+│   ├── source/           # Source table SQL definitions
+│   ├── augmented/        # Demographic enrichment SQL
+│   ├── prediction/       # Model training tables
+│   └── recommendation/   # Output recommendation tables
+├── src/
+│   ├── api/              # FastAPI endpoints
+│   ├── etl/              # Extract, transform, load
+│   ├── train/            # Model training & search
+│   ├── transform/        # Feature engineering
+│   ├── visualization/    # Charts and reports
+│   └── recommendation/   # Actionable output generation
+├── scripts/              # Automation & deployment
+├── tests/                # Unit and integration tests
+├── hooks/                # Pre-commit formatting & validation
+└── metrics/              # Model performance outputs
+```
+
+## Next Steps
+
+- [ ] Expand feature set with multi-year lag structures
+- [ ] Multi-target modeling for simultaneous outcome prediction
+- [ ] External validation on held-out facilities
+- [ ] Real-time API for operational decision support
+- [ ] Integration with hospital EHR systems
+- [ ] Dashboard for non-technical stakeholders
+
+## Data Refresh
+
+**New data**: Pull metadata from CMS API, clean filenames, download into appropriate year directory
+
+**Historical data**: Extract from ZIP archives, move to temp directory, run `_dev_filter_.sh` for processing
+⚠️ **Note**: Several scripts should be rewritten and tested before production use
+
+---
+
+*This project analyzes Medicare hospital performance to improve quality of care, patient safety, and healthcare outcomes through predictive analytics and demographic context.*
