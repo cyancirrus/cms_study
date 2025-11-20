@@ -143,4 +143,4 @@ cython_debug/
 data/*
 *.db
 .DS_Store
-visualizations/*
+# visualizations/*
