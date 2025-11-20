@@ -302,6 +302,13 @@ connect(DB_PATH, check_same_thread=False)
 
 ### TODO: Measure Polarity Review
 
+
+### Api Needs Haversine distance for the query
+As above the 111 scaling rule does not apply as expected, might need to dig into the math
+zipcode maps also update it could be that the zips have changed in those regions
+
+### Aggregate Scores
+
 For the psychiatric (IPFQR) measures, the current prototype applies a coarse
 polarity rule (treating all rate/percent columns as if lower is better).
 This is directionally useful for the demo but not clinically precise.
