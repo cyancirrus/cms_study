@@ -54,6 +54,8 @@ create_tables() {
 		"./etl/prediction/prediction_hvbp_tps.sql"
 		"./etl/prediction/prediction_hvbp_clinical_outcomes.sql"
 		"./etl/prediction/prediction_ipfqr_quality_measures_facility.sql"
+
+		"./etl/recommendation/recommendation_hospital.sql"
 	)
 	for sql_file in "${sql_files[@]}"; do
 		if [ ! -f "$sql_file" ]; then
@@ -76,6 +78,28 @@ transform_data() {
 	python ./src/transform_main.py || exit_with_error "ETL transform failed"
 }
 
+model_predictions() {
+	export GENERATE_PREDICTIONS=1
+	echo "-------------------------------------"
+	echo "             Medicare                "
+	echo "-------------------------------------"
+	python ./src/model_medicare_main.py
+	echo "-------------------------------------"
+	echo "             Psychiatric             "
+	echo "-------------------------------------"
+	python ./src/model_psychiatric_main.py
+	echo "-------------------------------------"
+	echo "             General                 "
+	echo "-------------------------------------"
+	python ./src/model_general_main.py
+	echo ""
+}
+
+create_recommendations() {
+	log "Creating Recommendations"
+	python ./src/recommendation_main.py
+}
+
 initialize_environment
 
 # # Incase the database didn't exist prior
@@ -85,5 +109,6 @@ create_database
 create_tables
 import_data
 transform_data
-
+model_predictions
+create_recommendations
 log "Database initialization complete."

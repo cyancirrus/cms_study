@@ -1,23 +1,25 @@
 #!/bin/bash
 source ./scripts/environment.sh
 
-model_explore() {
-	# echo "-------------------------------------"
-	# echo "             Medicare                "
-	# echo "-------------------------------------"
-	# python ./src/model_medicare_main.py
+model_predictions() {
+	export GENERATE_PREDICTIONS=0
+	echo "-------------------------------------"
+	echo "             Medicare                "
+	echo "-------------------------------------"
+	python ./src/model_medicare_main.py
 	echo "-------------------------------------"
 	echo "             Psychiatric             "
 	echo "-------------------------------------"
 	python ./src/model_psychiatric_main.py
-	# echo "-------------------------------------"
-	# echo "             General                 "
-	# echo "-------------------------------------"
-	# python ./src/model_general_main.py
+	echo "-------------------------------------"
+	echo "             General                 "
+	echo "-------------------------------------"
+	python ./src/model_general_main.py
 	echo ""
 }
 
 model_checkin() {
+	export GENERATE_PREDICTIONS=0
 	# optionally load .env
 	if [ -f ./.env ]; then
 		export $(grep -v '^#' .env | xargs)
@@ -46,5 +48,5 @@ model_checkin() {
 
 }
 
-model_explore
-# model_checkin
+model_predictions
+model_checkin

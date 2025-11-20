@@ -1,34 +1,30 @@
-Random seed: 128
+Random seed: 42
 -------------------------------------
 Medicare model
-2025-11-18 19:05:38.711 Python[28484:3117978] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
+2025-11-19 18:22:10.447 Python[47447:3331797] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
 Metrics on training set:
-R² (model score): 0.2837
-R² (manual r2_score): 0.2837
+R Squared: 0.1872
 
 Metrics on test set:
-R² (model score): 0.2823
-R² (manual r2_score): 0.2823
-R² (model score): 0.2823
-R² (manual r2_score): 0.2823
-Relative MAE: 0.7863
+R Squared: 0.1762
+Relative MAE: 0.8364
 -------------------------------------
 Psychiatric model
-2025-11-18 19:05:41.840 Python[28487:3118018] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
+2025-11-19 18:22:13.608 Python[47450:3331823] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
 Metrics on training set:
-R Squared: 0.1806
+R Squared: 0.1822
 
 Metrics on test set:
-R Squared: 0.1585
-Relative MAE: 1.0192
+R Squared: 0.1557
+Relative MAE: 1.0400
 -------------------------------------
 General model
-2025-11-18 19:05:45.547 Python[28490:3118038] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
+2025-11-19 18:22:17.451 Python[47453:3331851] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
 Metrics on training set:
-R Squared: 0.1233
+R Squared: 0.1186
 
 Metrics on test set:
-R Squared: 0.1105
-Relative MAE: 0.9286
+R Squared: 0.0989
+Relative MAE: 0.9300
 -------------------------------------
 All models finished

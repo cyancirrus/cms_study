@@ -30,3 +30,5 @@ class CmsSchema(Enum):
     prediction_hvbp_tps                                = "prediction_hvbp_tps"
     prediction_hvbp_clinical_outcomes                  = "prediction_hvbp_clinical_outcomes"
     prediction_ipfqr_quality_measures_facility         = "prediction_ipfqr_quality_measures_facility"
+    # recommendation
+    recommendation_hospital                            ="recommendation_hospital"

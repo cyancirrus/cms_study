@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-# from initialize_environment import RANDOM_STATE, ENGINE
-from initialize_environment import RANDOM_STATE, ENGINE
+from initialize_environment import (
+    RANDOM_STATE,
+    ENGINE,
+    GENERATE_PREDICTIONS,
+)
 import sqlite3
 from typing import List, Tuple, Final
 import numpy as np
@@ -362,8 +365,7 @@ if __name__ == "__main__":
     #     learning_rate_range = np.linspace(0.75, 0.125, 4),
     #     max_depth_range = [3],
     # )
-
-    # NOTE: To write out predictions
-    # model_predict = fit_linear_regression(x, delta_y)
-    # predictions = predict_next_period_for_latest_year(model, df)
-    # ENGINE.write(predictions, CmsSchema.prediction_hvbp_tps);
+    if GENERATE_PREDICTIONS:
+        model_predict = fit_linear_regression(x, delta_y)
+        predictions = predict_next_period_for_latest_year(model, df)
+        ENGINE.write(predictions, CmsSchema.prediction_hvbp_tps)

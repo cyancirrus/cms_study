@@ -1,5 +1,9 @@
 from __future__ import annotations
-from initialize_environment import RANDOM_STATE, ENGINE
+from initialize_environment import (
+    RANDOM_STATE,
+    ENGINE,
+    GENERATE_PREDICTIONS,
+)
 import sqlite3
 from typing import List, Tuple, Final
 import numpy as np
@@ -629,13 +633,10 @@ if __name__ == "__main__":
     # #     learning_rate_range = np.linspace(0.02, 0.10, 4),
     # #     max_depth_range = [2, 3],
     # # )
+    if GENERATE_PREDICTIONS:
+        predictions = predict_next_ipfqr_period(model, df)
 
-    # write predictions for next period
-    predictions = predict_next_ipfqr_period(model, df)
-    print(predictions.head())
-    print(predictions.columns)
-
-    ENGINE.write(
-        predictions,
-        CmsSchema.prediction_ipfqr_quality_measures_facility,
-    )
+        ENGINE.write(
+            predictions,
+            CmsSchema.prediction_ipfqr_quality_measures_facility,
+        )

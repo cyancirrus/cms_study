@@ -1,7 +1,11 @@
 from __future__ import annotations
 import sqlite3
 from typing import List, Protocol, Tuple
-from initialize_environment import RANDOM_STATE, ENGINE
+from initialize_environment import (
+    RANDOM_STATE,
+    ENGINE,
+    GENERATE_PREDICTIONS,
+)
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -565,7 +569,7 @@ if __name__ == "__main__":
     # x, y = structure_data_multivar(df)
 
     x_train, x_test, y_train, y_test = train_test_split(
-        x, delta_y, test_size=0.2, random_state=42
+        x, delta_y, test_size=0.2, random_state=RANDOM_STATE
     )
     # BEST MODEL CURRENTLY
     model = fit_linear_regression(x_train, y_train)
@@ -594,11 +598,10 @@ if __name__ == "__main__":
         "metrics/medicare.png", delta_true, delta_pred, target_names
     )
 
-    # NOTE: To write out predictions
-    model_predict = fit_linear_regression(x, delta_y)
-    predictions = predict_next_period_for_latest_year(
-        model, df, df_read
-    )
-    ENGINE.write(
-        predictions, CmsSchema.prediction_hvbp_clinical_outcomes
-    )
+    if GENERATE_PREDICTIONS:
+        predictions = predict_next_period_for_latest_year(
+            model, df, df_read
+        )
+        ENGINE.write(
+            predictions, CmsSchema.prediction_hvbp_clinical_outcomes
+        )
