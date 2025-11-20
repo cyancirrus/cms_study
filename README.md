@@ -307,7 +307,7 @@ connect(DB_PATH, check_same_thread=False)
 
 *This project analyzes Medicare hospital performance to improve quality of care, patient safety, and healthcare outcomes through predictive analytics and demographic context.*
 
-### TODO: Measure Polarity Review
+## TODO: Measure Polarity Review
 
 
 ### Api Needs Haversine distance for the query
