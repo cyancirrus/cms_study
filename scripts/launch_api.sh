@@ -6,7 +6,7 @@ launch() {
 	# Give the server a second to start
 	sleep 2
 	# # Open Firefox to your API
-	open -a "Firefox" "http://127.0.0.1:5678/docs"
+	# open -a "Firefox" "http://127.0.0.1:5678/docs"
 }
 
 launch

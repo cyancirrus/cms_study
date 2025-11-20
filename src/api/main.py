@@ -1,8 +1,13 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
+from datetime import datetime, timezone
+from src.api.methods.query_recommendation import (
+    query_recommendation_hospital,
+)
 from src.app_types.categories import (
     HospitalType,
     ServiceCategory,
 )
+from src.initialize_environment import ENGINE
 
 app = FastAPI(title="Hospital Recommendation API")
 
@@ -14,26 +19,65 @@ def favicon():
 
 @app.get("/recommend_hospital")
 def retrieve_recommended_hospital(
-    zip_code: int = Query(
-        ...,
-        description="5-digit ZIP code of patient location",
+    user_lat: int = Query(
+        description="users latitude",
     ),
-    hospital_type: HospitalType = Query(
-        ..., description="Type of hospital"
+    user_long: int = Query(
+        description="users longitude",
     ),
-    service_category: ServiceCategory = Query(
-        ..., description="Type of service needed"
+    hospital_type: HospitalType | None = Query(
+        None, description="Type of hospital (optional)"
+    ),
+    service_category: ServiceCategory | None = Query(
+        None, description="Type of service needed (optional)"
+    ),
+    distance_filter=Query(
+        50, desciption="Hospital needs to be with this many kilometers"
+    ),
+    number_results: int = Query(
+        10,
+        ge=1,
+        le=100,
+        description="Max number of hospitals to return",
     ),
 ):
     """
-    Returns a constant hospital recommendation for testing purposes.
+    Recommend hospitals for a given ZIP code.
+    Filters by hospital_type and service_category if provided.
     """
+
+    hospital_type_str = (
+        hospital_type.value if hospital_type is not None else None
+    )
+    service_type_str = (
+        service_category.value if service_category is not None else None
+    )
+
+    results = query_recommendation_hospital(
+        engine=ENGINE,
+        user_lat=user_lat,
+        user_long=user_long,
+        distance_filter=distance_filter,
+        number_results=number_results,
+        hospital_type=hospital_type_str,
+        service_type=service_type_str,
+    )
+
+    if not results:
+        # Optional, but nice API ergonomics
+        raise HTTPException(
+            status_code=404,
+            detail="No recommended hospitals found for the given filters.",
+        )
+
+    request_time = datetime.now(timezone.utc).isoformat()
+
     return {
-        "name": "Example Hospital",
-        "zip_code": zip_code,
-        "type": hospital_type.value,
-        "services": [service_category.value],
-        "message": "This is a constant response for scaffolding purposes",
+        "request_time": request_time,
+        "hospital_type": hospital_type_str,
+        "service_category": service_type_str,
+        "number_results": len(results),
+        "recommendations": results,
     }
 
 

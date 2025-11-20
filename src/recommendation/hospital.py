@@ -77,7 +77,7 @@ def compute_combined_scores_union(
         for col in cols:
             df[col] = normalize_series(df[col], invert=invert)
         df["score"] = df[cols].mean(axis=1)
-        df["recommendation_year"] = df["submission_year"] + 1
+        df["recommendation_year"] = df["submission_year"]
         df["service_type"] = service_type
         return df[
             [
