@@ -107,7 +107,7 @@ create_recommendations() {
 	python ./src/recommendation_main.py
 }
 
-initialize_environment
+# initialize_environment
 
 # # Incase the database didn't exist prior
 create_database

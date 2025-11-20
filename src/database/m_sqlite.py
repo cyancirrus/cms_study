@@ -65,3 +65,5 @@ class SQLiteEngine(EngineProtocol):
                 return "replace"
             case WriteMode.error:
                 return "fail"
+            case _:
+                return "append"
