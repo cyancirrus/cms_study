@@ -299,3 +299,19 @@ connect(DB_PATH, check_same_thread=False)
 ---
 
 *This project analyzes Medicare hospital performance to improve quality of care, patient safety, and healthcare outcomes through predictive analytics and demographic context.*
+
+### TODO: Measure Polarity Review
+
+For the psychiatric (IPFQR) measures, the current prototype applies a coarse
+polarity rule (treating all rate/percent columns as if lower is better).
+This is directionally useful for the demo but not clinically precise.
+
+Planned improvement:
+- Define a per-measure polarity map (e.g., restraint/seclusion rates = lower is better,
+  follow-up / intervention / screening percentages = higher is better).
+- Apply the same review to other program tables to ensure all composite scores
+  consistently reflect “higher is better” from a quality-of-care perspective.
+
+Due to time constraints for this prototype, this refinement is noted but not yet implemented.
+
+Should check other tables and all modeled features as well
