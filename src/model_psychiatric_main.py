@@ -620,6 +620,14 @@ if __name__ == "__main__":
     plot_delta_scatter(
         "./metrics/psychiatric", y_test, delta_pred, targets
     )
+
+    # Compute variances
+    var_y = np.var(y, ddof=1)  # sample variance
+    var_Dy = np.var(delta_y, ddof=1)
+
+    # Print nicely
+    print(f"Variance y := {var_y:.4f}")
+    print(f"Variance Δy := {var_Dy:.4f}")
     # # # ## for the scructure ipfqr with demographics
     # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
     #     n_estimators_range = [24, 48, 64, 128],

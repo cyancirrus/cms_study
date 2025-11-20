@@ -31,7 +31,7 @@ retrieve_recommended_hospital() {
 	# params+="hospital_type=womens&"        # must match your HospitalType enum value
 	# params+="service_category=psychiatric" # must match your ServiceCategory enum value
 
-	curl -s "${base_url}${params}"
+	curl -s "${base_url}${params}" | jq
 }
 
 # launch

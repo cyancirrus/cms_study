@@ -470,7 +470,7 @@ def structure_data_multivar_with_readmissions_and_demographics(
     y_prev = df_final[[f"{c}_prev" for c in target]].values
     delta_y = y - y_prev
 
-    return X, delta_y, target
+    return X, y, delta_y, target
 
 
 def predict_next_period_for_latest_year(
@@ -561,7 +561,7 @@ if __name__ == "__main__":
     df = load_data()
     df_read = load_readmissions_scaled()
     # x, y = structure_data_multivar_with_readmissions(df, df_read)
-    x, delta_y, target = (
+    x, y, delta_y, target = (
         structure_data_multivar_with_readmissions_and_demographics(
             df, df_read
         )
@@ -597,6 +597,14 @@ if __name__ == "__main__":
     plot_delta_scatter(
         "metrics/medicare.png", delta_true, delta_pred, target_names
     )
+
+    # Compute variances
+    var_y = np.var(y, ddof=1)  # sample variance
+    var_Dy = np.var(delta_y, ddof=1)
+
+    # Print nicely
+    print(f"Variance y := {var_y:.4f}")
+    print(f"Variance Δy := {var_Dy:.4f}")
 
     if GENERATE_PREDICTIONS:
         predictions = predict_next_period_for_latest_year(

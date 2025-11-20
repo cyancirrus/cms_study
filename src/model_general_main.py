@@ -268,7 +268,7 @@ def structure_hvbp_tps_with_demographics(
     y = df_final[target_cols].values
     delta_y = y - df_final[[f"{c}_prev" for c in target_cols]].values
 
-    return x, delta_y, target_cols
+    return x, y, delta_y, target_cols
 
 
 def predict_next_period_for_latest_year(
@@ -329,8 +329,7 @@ def predict_next_period_for_latest_year(
 
 if __name__ == "__main__":
     df = load_data()
-    # x, delta_y, targets = structure_hvbp_tps(df)
-    x, delta_y, targets = structure_hvbp_tps_with_demographics(df)
+    x, y, delta_y, targets = structure_hvbp_tps_with_demographics(df)
 
     x_train, x_test, y_train, y_test = train_test_split(
         x, delta_y, test_size=0.2, random_state=RANDOM_STATE
@@ -350,6 +349,14 @@ if __name__ == "__main__":
 
     delta_pred = model.predict(x_test)
     plot_delta_scatter("./metrics/general", y_test, delta_pred, targets)
+
+    # Compute variances
+    var_y = np.var(y, ddof=1)  # sample variance
+    var_Dy = np.var(delta_y, ddof=1)
+
+    # Print nicely
+    print(f"Variance y := {var_y:.4f}")
+    print(f"Variance Δy := {var_Dy:.4f}")
 
     # ## for the scructure base hvbp_tps
     # gbm_grid_search(RANDOM_STATE, x_train, y_train, x_test, y_test,
