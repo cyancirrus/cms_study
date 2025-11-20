@@ -12,8 +12,10 @@
 #}
 
 #!/usr/bin/env bash
-source ./scripts/launch_api.sh
-source ./scripts/terminate_api.sh
+# source ./scripts/launch_api.sh
+# source ./scripts/terminate_api.sh
+
+#!/usr/bin/env bash
 
 retrieve_recommended_hospital() {
 	base_url="http://127.0.0.1:5678/recommend_hospital?"
@@ -24,17 +26,17 @@ retrieve_recommended_hospital() {
 
 	params="user_lat=${user_lat}&"
 	params+="user_long=${user_long}&"
-	params+="distance_filter=50&" # ~50km radius
+	params+="distance_filter=100&" # ~50km radius
 	params+="number_results=10&"
-	params+="hospital_type=womens&"        # must match your HospitalType enum value
-	params+="service_category=psychiatric" # must match your ServiceCategory enum value
+	# params+="hospital_type=womens&"        # must match your HospitalType enum value
+	# params+="service_category=psychiatric" # must match your ServiceCategory enum value
 
 	curl -s "${base_url}${params}"
 }
 
-launch
+# launch
 retrieve_recommended_hospital
-shutdown
+# shutdown
 
 # launch
 # retrieve_recommended_hospital

@@ -2,3 +2,10 @@
 -- get api stood up
 -- redo documentation
 -- plugin spark via bridge
+
+
+
+
+./scripts/launch_api.sh
+./scripts/requests.sh
+./scripts/teerminate.sh

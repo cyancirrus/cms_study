@@ -3,7 +3,7 @@ import pandas as pd
 import sqlite3
 from enum import Enum
 from typing import List, Literal
-from api.database.bridge import EngineProtocol, WriteMode
+from src.api.database.bridge import EngineProtocol, WriteMode
 
 
 class SQLiteEngine(EngineProtocol):

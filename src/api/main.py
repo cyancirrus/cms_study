@@ -7,8 +7,10 @@ from src.app_types.categories import (
     HospitalType,
     ServiceCategory,
 )
-from src.initialize_environment import ENGINE
+from src.api.database.m_sqlite import SQLiteEngine
 
+DATABASE = "source.db"
+ENGINE = SQLiteEngine(DATABASE)
 app = FastAPI(title="Hospital Recommendation API")
 
 
@@ -19,10 +21,10 @@ def favicon():
 
 @app.get("/recommend_hospital")
 def retrieve_recommended_hospital(
-    user_lat: int = Query(
+    user_lat: float = Query(
         description="users latitude",
     ),
-    user_long: int = Query(
+    user_long: float = Query(
         description="users longitude",
     ),
     hospital_type: HospitalType | None = Query(

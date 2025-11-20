@@ -1,6 +1,6 @@
 from typing import Optional
 import pandas as pd
-from src.database.bridge import EngineProtocol
+from src.api.database.bridge import EngineProtocol
 
 
 def query_recommendation_hospital(

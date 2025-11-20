@@ -56,19 +56,6 @@ def compute_combined_scores(df_ipfqr, df_hvbp, df_tps) -> pd.DataFrame:
     ]
 
 
-# def attach_metadata(df_score, df_hosp, df_zip) -> pd.DataFrame:
-#     df = df_score.merge(df_hosp[['submission_year', 'facility_id', 'facility_name', 'hospital_type', 'address', 'zip_code', 'state']],
-#                         on='facility_id', how='inner')
-#     df = df.merge(df_zip, on='zip_code', how='left')
-
-#     # Expand to multiple service types per facility
-#     service_types = ['Psychiatry', 'Medicare', 'General']
-#     df_long = pd.concat([
-#         df.assign(service_type=st) for st in service_types
-#     ], ignore_index=True)
-#     return df_long[['recommendation_year', 'facility_id', 'facility_name', 'hospital_type', 'address', 'zip_code', 'state', 'service_type', 'score']]
-
-
 def compute_combined_scores_union(
     df_ipfqr, df_hvbp, df_tps
 ) -> pd.DataFrame:
@@ -99,13 +86,13 @@ def compute_combined_scores_union(
 
     dfs = [
         score_table(
-            df_ipfqr, ipfqr_cols, invert=True, service_type="Medicare"
+            df_ipfqr, ipfqr_cols, invert=True, service_type="medicare"
         ),
         score_table(
-            df_hvbp, hvbp_cols, invert=True, service_type="General"
+            df_hvbp, hvbp_cols, invert=True, service_type="general"
         ),
         score_table(
-            df_tps, tps_cols, invert=False, service_type="Psychiatry"
+            df_tps, tps_cols, invert=False, service_type="psychiatry"
         ),
     ]
 
@@ -147,31 +134,6 @@ def attach_metadata(df_score, df_hosp, df_zip) -> pd.DataFrame:
             "score",
         ]
     ]
-
-
-# def attach_metadata(df_score, df_hosp, df_zip) -> pd.DataFrame:
-#     # Keep only unique facility_id rows from hospital table
-#     df_hosp_unique = df_hosp.drop_duplicates(subset=['facility_id'])
-
-#     # Merge
-#     df = df_score.merge(
-#         df_hosp_unique[['facility_id', 'facility_name', 'hospital_type', 'address', 'zip_code', 'state']],
-#         on='facility_id', how='inner'
-#     )
-
-#     print(f"DF SHAPE : {df.shape}")
-#     # Merge lat/lon
-#     df = df.merge(df_zip, on='zip_code', how='left')
-
-#     # Expand to multiple service types per facility
-#     service_types = ['Psychiatry', 'Medicare', 'General']
-#     df_long = pd.concat([
-#         df.assign(service_type=st) for st in service_types
-#     ], ignore_index=True)
-#     print(f"DF LONG : {df_long.shape}")
-#     # Merge lat/lon
-
-#     return df_long[['recommendation_year', 'facility_id', 'facility_name', 'hospital_type', 'address', 'zip_code', 'state', 'service_type', 'score']]
 
 
 def build_recommendation_table(engine, current_year: int):
