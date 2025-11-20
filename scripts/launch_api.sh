@@ -14,6 +14,8 @@ launch() {
 
 	uvicorn src.api.main:app --host 127.0.0.1 --port 5678 &
 	sleep 2
+	# Open Firefox to your API
+	open -a "Firefox" "http://127.0.0.1:5678/docs"
 }
 
 # launch() {
@@ -38,5 +40,3 @@ launch
 # # Start Uvicorn in the background
 # uvicorn src.api.main:app --host 127.0.0.1 --port 5678 &
 # # Give the server a second to start
-# # # Open Firefox to your API
-# # open -a "Firefox" "http://127.0.0.1:5678/docs"
