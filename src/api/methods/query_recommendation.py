@@ -28,7 +28,7 @@ def query_recommendation_hospital(
         longitude,
         score,
         sqrt((latitude - {user_lat})*(latitude - {user_lat}) +
-             (longitude - {user_long})*(longitude - {user_long})) AS distance
+             (longitude - {user_long})*(longitude - {user_long})) * 1110 AS distance
     FROM recommendation_hospital
     """
 

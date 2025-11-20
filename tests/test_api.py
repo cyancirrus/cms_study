@@ -30,12 +30,12 @@ def test_favicon_endpoint():
     [
         (
             12345,
-            HospitalType.womens,
+            HospitalType.acute,
             ServiceCategory.psychiatric,
         ),
         (
             67890,
-            HospitalType.children,
+            HospitalType.critical,
             ServiceCategory.general,
         ),
     ],

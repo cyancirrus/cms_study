@@ -2,13 +2,12 @@ from enum import Enum
 
 
 class HospitalType(str, Enum):
-    womens = "womens"
-    children = "children"
-    veterans = "veterans"
-    medicare = "medicare"
+    acute = "Acute Care Hospitals"
+    psych = "Psychiatric"
+    critical = "Critical Access Hospitals"
 
 
 class ServiceCategory(str, Enum):
-    psychiatric = "psychiatric"
+    psychiatric = "psychiatry"
     medicare = "medicare"
     general = "general"
