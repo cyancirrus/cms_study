@@ -2,13 +2,6 @@
 set -e # exit immediately if any command fails
 
 source ./scripts/environment.sh
-# # Directory of this script
-# SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# # Project root is one level up from scripts/
-# PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# # Make sure Python sees PROJECT_ROOT (which contains src/)
-# export PYTHONPATH="$PROJECT_ROOT:${PYTHONPATH:-}"
 
 log() {
 	echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
