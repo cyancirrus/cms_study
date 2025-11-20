@@ -1,7 +1,7 @@
 Random seed: 42
 -------------------------------------
 Medicare model
-2025-11-20 00:08:44.869 Python[67972:3533142] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
+2025-11-20 00:12:29.500 Python[68356:3535734] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
 Metrics on training set:
 R Squared: 0.1872
 
@@ -12,7 +12,7 @@ Variance y := 0.1063
 Variance Δy := 0.0001
 -------------------------------------
 Psychiatric model
-2025-11-20 00:08:48.143 Python[67974:3533177] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
+2025-11-20 00:12:32.667 Python[68358:3535769] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
 Metrics on training set:
 R Squared: 0.1822
 
@@ -23,7 +23,7 @@ Variance y := 0.9448
 Variance Δy := 0.3644
 -------------------------------------
 General model
-2025-11-20 00:08:51.992 Python[67977:3533213] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
+2025-11-20 00:12:36.322 Python[68360:3535803] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/2r/sk9x5b6n1199rdj5gdfwgvb80000gn/T/org.python.python.savedState
 Metrics on training set:
 R Squared: 0.1186
 

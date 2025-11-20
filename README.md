@@ -6,6 +6,13 @@ A predictive analytics system for Medicare hospital performance, focusing on mor
 
 This project analyzes CMS (Center for Medicare and Medicaid Services) hospital data to predict year-over-year changes in hospital performance metrics. The system combines hospital outcomes data with demographic and geographic context to generate actionable recommendations.
 
+## Data Notes
+
+- The `data/` directory contains cleaned datasets for multiple years and is **not included in the repository** due to size constraints.
+- The SQLite database (`*.db`) is also excluded for the same reason.
+- If you wish to run the full pipeline with all years of data, please contact the author or consider using Git LFS to manage large files.
+- All scripts are written to work with the data directory structure as shown; placeholder or smaller test data can be used to validate functionality.
+
 ## Quick Start
 
 ```bash
